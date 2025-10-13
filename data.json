@@ -10,35 +10,36 @@
       "children": [
         { "title": "Công nghệ 3",
       "children": [
-        { "title": "Bài 1: Công nghệ trong đời sống", "url": "pages/Cong-nghe-3/bai1.html" },
-        { "title": "Bài 2: Sử dụng đèn học", "url": "pages/Cong-nghe-3/bai2.html" }
+        { "title": "Bài 1: Công nghệ trong đời sống", "url": "pages/cong-nghe-3/bai1.html" },
+        { "title": "Bài 2: Sử dụng đèn học", "url": "pages/cong-nghe-3/bai2.html" }
       ] },
        { "title": "Công nghệ 4",
       "children": [
-        { "title": "Bài 1: Hoa và cây cảnh quanh em", "url": "pages/Cong-nghe-4/bai1.html" }
+        { "title": "Bài 1: Hoa và cây cảnh quanh em", "url": "pages/cong-nghe-4/bai1.html" }
       ] },
         { "title": "Công nghệ 5",
       "children": [
-        { "title": "Bài 1: Công nghệ trong đời sống", "url": "pages/Cong-nghe-5/bai1.html" }
-        , { "title": "Bài 2: Nhà sáng chế", "url": "pages/Cong-nghe-5/bai2.html" }
+        { "title": "Bài 1: Công nghệ trong đời sống", "url": "pages/cong-nghe-5/bai1.html" }
+        , { "title": "Bài 2: Nhà sáng chế", "url": "pages/cong-nghe-5/bai2.html" }
       ] },
         { "title": "Tin học 3",
       "children": [
-        { "title": "Bài 1: Thông tin và quyết định", "url": "pages/Tin-hoc-3/bai1.html" },
-        { "title": "Bài 2: Xử lý thông tinh", "url": "pages/Tin-hoc-3/bai2.html" }
+        { "title": "Bài 1: Thông tin và quyết định", "url": "pages/tin-hoc-3/bai1.html" },
+        { "title": "Bài 2: Xử lý thông tinh", "url": "pages/tin-hoc-3/bai2.html" }
        
       ] },
       { "title": "Tin học 4",
       "children": [
-        { "title": "Bài 1: Phần cứng và phần mềm máy tính", "url": "pages/Tin-hoc-4/bai1.html" }
-        , { "title": "Bài 2: Gõ bàn phím đúng cách", "url": "pages/Tin-hoc-4/bai2.html" }
+        { "title": "Bài 1: Phần cứng và phần mềm máy tính", "url": "pages/tin-hoc-4/bai1.html" }
+        , { "title": "Bài 2: Gõ bàn phím đúng cách", "url": "pages/tin-hoc-4/bai2.html" }
       ] },
         { "title": "Tin học 5",
       "children": [
-        { "title": "Bài 1: Máy tính có thể giúp em làm những việc gì?", "url": "pages/Tin-hoc-5/bai1.html" }
-        , { "title": "Bài 2: Tìm hiểu thông tin trên website", "url": "pages/Tin-hoc-5/bai2.html" }
+        { "title": "Bài 1: Máy tính có thể giúp em làm những việc gì?", "url": "pages/tin-hoc-5/bai1.html" }
+        , { "title": "Bài 2: Tìm hiểu thông tin trên website", "url": "pages/tin-hoc-5/bai2.html" }
       ] }
       ]
     }
   ]
+
 }
