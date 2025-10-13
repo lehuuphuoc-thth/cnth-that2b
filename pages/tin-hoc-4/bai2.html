@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tin học 4 - Bài 2: Thử Thách 10 Ngón</title>
+  <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+  <style>
+        /* CSS cho trò chơi */
+        :root {
+            --primary-color: #2196F3; /* Màu xanh dương - chủ đạo */
+            --secondary-color: #00BCD4; /* Màu xanh ngọc - làm nổi bật */
+            --background-color: #E3F2FD; /* Nền xanh nhạt */
+            --card-color: #FFFFFF;
+            --correct-color: #4CAF50; /* Xanh lá */
+            --incorrect-color: #F44336; /* Đỏ */
+            --text-color: #1A237E; /* Xanh đậm */
+            --font-family: 'Arial', sans-serif;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes shine {
+            0% { box-shadow: 0 0 10px rgba(33, 150, 243, 0.5); }
+            50% { box-shadow: 0 0 20px rgba(33, 150, 243, 0.8); }
+            100% { box-shadow: 0 0 10px rgba(33, 150, 243, 0.5); }
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--background-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #BBDEFB 0%, #E3F2FD 100%);
+        }
+
+        .game-container {
+            background-color: var(--card-color);
+            border-radius: 20px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+            padding: 30px;
+            max-width: 800px;
+            width: 100%;
+            text-align: center;
+            transition: all 0.5s ease-in-out;
+            position: relative;
+            border: 4px solid var(--secondary-color);
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        h1 {
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            font-size: 2.5em;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+
+        /* --- Phần 1: Điền thông tin --- */
+        #info-section input {
+            width: calc(100% - 20px);
+            padding: 12px;
+            margin: 10px 0;
+            border: 2px solid var(--primary-color);
+            border-radius: 10px;
+            font-size: 1.1em;
+            box-sizing: border-box;
+        }
+
+        .btn {
+            background-color: var(--secondary-color);
+            color: var(--card-color);
+            padding: 15px 30px;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-top: 20px;
+            transition: background-color 0.3s, transform 0.1s;
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+            animation: shine 2s infinite;
+        }
+
+        .btn:hover {
+            background-color: #00838F;
+            transform: translateY(-3px);
+            animation: none;
+        }
+
+        /* --- Phần 2: Trò chơi --- */
+        #game-section {
+            text-align: left;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        #challenge-counter {
+            font-size: 1.4em;
+            color: var(--text-color);
+            margin-bottom: 15px;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #E0E0E0;
+            padding-bottom: 5px;
+        }
+
+        #challenge-text {
+            background-color: #BBDEFB;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            font-size: 1.3em;
+            border-left: 5px solid var(--primary-color);
+        }
+
+        .options-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .option-btn {
+            background-color: #f0f0f0;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1.1em;
+            text-align: left;
+            transition: background-color 0.2s, border-color 0.2s;
+        }
+
+        .option-btn:hover:not(.selected):not([disabled]) {
+            background-color: #E0F7FA;
+            border-color: var(--secondary-color);
+        }
+
+        .option-btn.selected {
+            /* Áp dụng màu xanh lá theo v7 */
+            background-color: var(--correct-color) !important; 
+            border-color: #388E3C !important;
+            font-weight: bold;
+            color: white !important;
+        }
+        
+        /* Dạng Nối cột (Matching) */
+        .matching-area {
+            position: relative;
+            padding: 20px 0;
+            display: flex;
+            justify-content: space-around;
+            min-height: 350px;
+        }
+        
+        .matching-column {
+            width: 45%;
+            z-index: 10;
+        }
+        
+        .match-item {
+            background-color: #90CAF9; /* Xanh dương nhạt */
+            color: var(--text-color);
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 10px;
+            font-size: 1em;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: border 0.2s, box-shadow 0.2s, background-color 0.2s;
+            cursor: pointer;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .match-item.column-B {
+             background-color: #80CBC4; /* Xanh ngọc nhạt */
+        }
+        
+        .match-item.selected {
+            border: 3px solid var(--incorrect-color); /* Đỏ nổi bật khi đang chọn */
+            box-shadow: 0 0 10px var(--incorrect-color);
+        }
+        
+        /* ✅ Màu Xanh lá đồng bộ cho Nối cột sau khi hoàn thành (V7 Logic) */
+        .match-item.match-done {
+             background-color: var(--correct-color) !important; 
+             color: white;
+             border: 2px solid #388E3C;
+             cursor: default;
+        }
+
+        .line-svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 5;
+        }
+        
+        .connection-line {
+            stroke: var(--text-color);
+            stroke-width: 4;
+            marker-end: url(#arrowhead);
+            transition: stroke-dasharray 0.3s;
+        }
+        
+        /* Dạng Kéo thả (Drag and Drop) */
+        .drag-drop-area {
+            display: flex;
+            justify-content: space-around;
+            gap: 20px;
+            min-height: 250px;
+            text-align: center;
+        }
+        
+        .drop-target {
+            flex: 1;
+            background-color: #B3E5FC; /* Xanh lam nhạt */
+            padding: 15px;
+            border-radius: 15px;
+            border: 3px dashed var(--primary-color);
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            font-weight: bold;
+        }
+        
+        .drag-item {
+            background-color: #00BCD4; /* Xanh ngọc */
+            color: var(--card-color);
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: grab;
+            margin: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            transition: transform 0.2s;
+        }
+        
+        /* ✅ CSS đồng nhất màu cho kéo thả (Chỉ dùng Xanh Lá) */
+        .drag-item.correct-answer {
+            background-color: var(--correct-color); /* Xanh lá */
+            color: white;
+            border: 2px solid #388E3C;
+        }
+
+        .drag-source {
+            background-color: #E1F5FE;
+            padding: 15px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        /* --- Phần 3: Kết quả --- */
+        #result-section {
+            padding: 30px;
+            background: linear-gradient(135deg, #4DD0E1 0%, #00BCD4 100%);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            position: relative;
+            margin-top: 20px;
+        }
+
+        #result-info p {
+            font-size: 1.2em;
+            margin: 10px 0;
+            text-align: left;
+            color: var(--text-color);
+        }
+
+        #result-info span {
+            font-weight: bold;
+            color: #1A237E; 
+            float: right;
+        }
+
+        #review-text {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 10px;
+            color: white;
+            animation: shine 1s infinite alternate;
+        }
+        
+        .review-excellent { background-color: var(--correct-color); }
+        .review-good { background-color: var(--primary-color); }
+        .review-need-review { background-color: var(--incorrect-color); }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+  <div class="game-container" id="game-area">
+    <h1>⌨️ THỬ THÁCH 10 NGÓN 🏆</h1>
+
+    <div id="info-section">
+      <p>Chào em, hãy nhập thông tin để bắt đầu thử thách gõ bàn phím đúng cách!</p>
+      <input type="text" id="player-name" placeholder="Họ và tên của em" required>
+      <input type="text" id="player-class" placeholder="Lớp (Ví dụ: 4A1)" required>
+      <button class="btn" onclick="startGame()">Bắt đầu</button>
+    </div>
+
+    <div id="game-section" class="hidden">
+      <div id="challenge-counter">
+        <span>Thử thách: <span id="current-challenge-number">1</span> / 7</span>
+        <span id="player-status">Chào <span id="display-name"></span>!</span>
+      </div>
+      <div id="challenge-text"></div>
+      <div id="question-area"></div>
+      <div class="character-status">
+        Trạng thái: Đã hoàn thành đúng <span id="correct-count-display">0</span> thử thách
+      </div>
+      <button class="btn hidden" id="next-button" onclick="nextChallenge()">Tiếp tục 🚀</button>
+    </div>
+
+    <div id="result-section" class="hidden">
+      <h2>✨ CHÚC MỪNG EM ✨</h2>
+      <div id="result-info">
+        <p>Họ tên: <span id="res-name"></span></p>
+        <p>Lớp: <span id="res-class"></span></p>
+        <p>Số lần chơi: <span id="res-play-count"></span></p>
+        <p>Tổng thử thách: <span id="res-total-challenges"></span></p>
+        <p>Số thử thách đúng: <span id="res-correct-challenges"></span></p>
+        <p>% hoàn thành đúng: <span id="res-percentage"></span></p>
+        <p>Thời gian hoàn thành: <span id="res-time"></span></p>
+      </div>
+      <div id="review-text"></div>
+      <div id="award-image">🔟</div>
+      <button class="btn" onclick="restartGame()">Chơi lại</button>
+      <button class="btn" onclick="shareResult()">Chia sẻ kết quả 📸</button>
+    </div>
+
+    <audio id="sfx-correct" src="https://www.soundjay.com/buttons/button-2.mp3" preload="auto"></audio>
+    <audio id="sfx-incorrect" src="https://www.soundjay.com/buttons/button-3.mp3" preload="auto"></audio>
+    <audio id="sfx-complete" src="https://www.soundjay.com/misc/fanfare.mp3" preload="auto"></audio>
+  </div>
+
+  <script>
+        // JavaScript cho trò chơi
+        const gameData = [
+            {
+                id: 1,
+                type: 'multiple-choice',
+                question: "Tư thế ngồi làm việc với máy tính ĐÚNG là:",
+                options: [
+                    { text: "Lưng cong, vai rụt, hai tay tì lên bàn.", isCorrect: false },
+                    { text: "Màn hình thấp hơn mắt, cổ cúi xuống 30 độ.", isCorrect: false },
+                    { text: "Lưng thẳng, vai thả lỏng, hai chân đặt song song trên sàn.", isCorrect: true },
+                    { text: "Ngồi sát màn hình để nhìn rõ hơn, khoảng cách < 30cm.", isCorrect: false }
+                ],
+                answered: false,
+                isCorrect: null
+            },
+            {
+                id: 2,
+                type: 'matching',
+                question: "Em hãy nối ngón tay với phím thuộc hàng cơ sở (Home Row) mà nó phụ trách:",
+                matches: [
+                    { left: "Ngón trỏ tay trái", right: "Phím F" },
+                    { left: "Ngón giữa tay phải", right: "Phím K" },
+                    { left: "Ngón út tay trái", right: "Phím A" }
+                ],
+                answered: false,
+                isCorrect: null,
+                connections: {}, // Lưu trữ kết nối hiện tại (leftKey: rightKey)
+                correctConnections: {} // Được khởi tạo trong startGame
+            },
+            {
+                id: 3,
+                type: 'multiple-choice',
+                question: "Hai ngón tay cái được đặt ở đâu khi gõ bàn phím 10 ngón?",
+                options: [
+                    { text: "Phím Enter.", isCorrect: false },
+                    { text: "Phím Shift.", isCorrect: false },
+                    { text: "Phím cách (Spacebar).", isCorrect: true },
+                    { text: "Phím Backspace.", isCorrect: false }
+                ],
+                answered: false,
+                isCorrect: null
+            },
+            {
+                id: 4,
+                type: 'true-false',
+                question: "Khi gõ bàn phím, em chỉ cần sử dụng ngón trỏ của hai tay để gõ tất cả các phím. Đúng hay Sai?",
+                answer: false,
+                answered: false,
+                isCorrect: null,
+                explanation: "Gõ 10 ngón đúng cách là sử dụng tất cả 10 ngón tay, mỗi ngón phụ trách một khu vực phím riêng biệt."
+            },
+            {
+                id: 5,
+                type: 'multiple-choice',
+                question: "Hàng phím nào được gọi là Hàng phím cơ sở (Home Row) – nơi đặt tay ban đầu?",
+                options: [
+                    { text: "Q W E R T Y U I O P", isCorrect: false },
+                    { text: "Z X C V B N M", isCorrect: false },
+                    { text: "A S D F J K L ;", isCorrect: true },
+                    { text: "1 2 3 4 5 6 7 8 9 0", isCorrect: false }
+                ],
+                answered: false,
+                isCorrect: null
+            },
+            {
+                id: 6,
+                type: 'multiple-choice',
+                question: "Lợi ích quan trọng nhất của việc gõ bàn phím đúng cách (bằng 10 ngón) là gì?",
+                options: [
+                    { text: "Giúp bàn phím không bị bám bụi.", isCorrect: false },
+                    { text: "Tăng tốc độ gõ, giảm mỏi mắt và tránh các bệnh cột sống.", isCorrect: true },
+                    { text: "Giúp máy tính hoạt động nhanh hơn 50%.", isCorrect: false },
+                    { text: "Làm cho màu sắc trên màn hình đẹp hơn.", isCorrect: false }
+                ],
+                answered: false,
+                isCorrect: null
+            },
+            {
+                id: 7,
+                type: 'drag-drop',
+                question: "Hãy kéo thả các hành động vào ô **Nên làm** hoặc **Không nên làm** khi học Tin học.",
+                items: [
+                    { text: "Giữ khoảng cách mắt - màn hình 50-70cm", category: "Nên làm" },
+                    { text: "Nhìn xuống bàn phím khi gõ", category: "Không nên làm" },
+                    { text: "Đặt ngón trỏ ở hai phím có gờ nhỏ", category: "Nên làm" },
+                    { text: "Tì cổ tay lên bàn làm việc", category: "Không nên làm" }
+                ],
+                categories: ["Nên làm", "Không nên làm"],
+                answered: false,
+                isCorrect: null
+            }
+        ];
+
+        let questions = []; 
+        let currentChallengeIndex = 0;
+        let correctChallenges = 0;
+        let startTime;
+        let playerInfo = {};
+        let selectedItemA = null; 
+        
+        let playerRecords = JSON.parse(localStorage.getItem('gameRecords_TH4_B2')) || {};
+
+        // === Hàm tiện ích ===
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        function playSound(type) {
+            const audio = document.getElementById(`sfx-${type}`);
+            if (audio) {
+                audio.currentTime = 0;
+                audio.play();
+            }
+        }
+        
+        function formatTime(ms) {
+            const totalSeconds = Math.floor(ms / 1000);
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
+            return `${minutes} phút ${seconds} giây`;
+        }
+        
+        function savePlayerRecord() {
+            const playerId = playerInfo.name + playerInfo.class;
+            if (!playerRecords[playerId]) {
+                playerRecords[playerId] = {
+                    name: playerInfo.name,
+                    class: playerInfo.class,
+                    playCount: 0
+                };
+            }
+            playerRecords[playerId].playCount += 1;
+            playerInfo.playCount = playerRecords[playerId].playCount;
+            localStorage.setItem('gameRecords_TH4_B2', JSON.stringify(playerRecords));
+        }
+
+        // === Phần 1 & Bắt đầu trò chơi ===
+
+        function loadExistingPlayer(name, playerClass) {
+             const playerId = name + playerClass;
+             if (playerRecords[playerId]) {
+                 playerInfo.playCount = playerRecords[playerId].playCount;
+                 return true;
+             }
+             return false;
+        }
+        
+        function startGame(isReplay = false) {
+            if (!isReplay) {
+                const name = document.getElementById('player-name').value.trim();
+                const playerClass = document.getElementById('player-class').value.trim();
+
+                if (!name || !playerClass) {
+                    alert('Vui lòng nhập đầy đủ Họ và tên, Lớp.');
+                    return;
+                }
+                
+                playerInfo = { name, class: playerClass };
+                loadExistingPlayer(name, playerClass);
+            }
+            
+            savePlayerRecord(); 
+            
+            document.getElementById('info-section').classList.add('hidden');
+            document.getElementById('result-section').classList.add('hidden');
+            document.getElementById('game-section').classList.remove('hidden');
+
+            document.getElementById('display-name').textContent = playerInfo.name;
+            
+            // --- RESET TOÀN BỘ TRẠNG THÁI TRÒ CHƠI ---
+            questions = shuffleArray(gameData.map(q => ({ 
+                ...q, 
+                answered: false, 
+                isCorrect: null,
+                connections: q.type === 'matching' ? {} : null, // Reset kết nối cho matching
+                domElements: null
+            }))); 
+            
+            currentChallengeIndex = 0;
+            correctChallenges = 0;
+            selectedItemA = null; 
+            startTime = Date.now();
+            
+            questions.forEach(q => {
+                 if (q.type === 'matching') {
+                     // Tạo bản đồ đáp án đúng
+                     q.correctConnections = {};
+                     q.matches.forEach(m => {
+                         q.correctConnections[m.left] = m.right;
+                     });
+                     // Xáo trộn cột B
+                     q.shuffledMatchesB = shuffleArray(q.matches.map(m => m.right));
+                 }
+                 if (q.type === 'drag-drop') {
+                     q.shuffledItems = shuffleArray([...q.items]);
+                 }
+            });
+
+            loadChallenge();
+        }
+        
+        function restartGame() {
+            startGame(true);
+        }
+
+        // === Phần 2: Nội dung trò chơi ===
+
+        function loadChallenge() {
+            if (currentChallengeIndex >= questions.length) {
+                finishGame();
+                return;
+            }
+
+            const challenge = questions[currentChallengeIndex];
+            
+            document.getElementById('next-button').classList.add('hidden');
+            document.getElementById('current-challenge-number').textContent = currentChallengeIndex + 1;
+            document.getElementById('correct-count-display').textContent = correctChallenges;
+            document.getElementById('challenge-text').textContent = challenge.question;
+            
+            const questionArea = document.getElementById('question-area');
+            questionArea.innerHTML = '';
+            
+            // Load giao diện theo loại câu hỏi
+            switch (challenge.type) {
+                case 'multiple-choice':
+                case 'true-false':
+                    loadMultipleChoice(challenge, questionArea);
+                    break;
+                case 'matching':
+                    loadMatching(challenge, questionArea);
+                    break;
+                case 'drag-drop':
+                    loadDragDrop(challenge, questionArea);
+                    break;
+            }
+        }
+
+        // --- Dạng Trắc nghiệm (Multiple Choice / True False) ---
+        function loadMultipleChoice(challenge, container) {
+            const optionsContainer = document.createElement('div');
+            optionsContainer.className = 'options-container';
+
+            let optionsToRender = [];
+            if (challenge.type === 'multiple-choice') {
+                optionsToRender = challenge.options.map((opt, index) => ({
+                    text: `${String.fromCharCode(65 + index)}. ${opt.text}`,
+                    isCorrect: opt.isCorrect,
+                    originalIndex: index
+                }));
+            } else if (challenge.type === 'true-false') {
+                optionsToRender = [
+                    { text: 'A. Đúng', isCorrect: challenge.answer === true, originalIndex: 0 },
+                    { text: 'B. Sai', isCorrect: challenge.answer === false, originalIndex: 1 }
+                ];
+            }
+            
+            const shuffledOptions = shuffleArray(optionsToRender);
+            
+            shuffledOptions.forEach((option) => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.textContent = option.text;
+                btn.onclick = () => selectOption(btn, option.isCorrect); 
+                optionsContainer.appendChild(btn);
+            });
+            container.appendChild(optionsContainer);
+        }
+
+        function selectOption(selectedBtn, isCorrect) {
+            if (questions[currentChallengeIndex].answered) return;
+
+            const options = selectedBtn.parentNode.querySelectorAll('.option-btn');
+            const challenge = questions[currentChallengeIndex];
+
+            options.forEach(btn => {
+                btn.disabled = true; 
+                
+                if (btn === selectedBtn) {
+                     // 1. ÁP DỤNG MÀU XANH LÁ cho nút được chọn (đồng nhất V7)
+                     btn.classList.add('selected'); // Dùng class đã được định nghĩa CSS ở trên
+                } else {
+                     // 2. Các nút còn lại chỉ bị làm mờ đi
+                     btn.style.opacity = '0.6';
+                     btn.classList.remove('selected');
+                }
+            }); 
+            
+            challenge.answered = true;
+            challenge.isCorrect = isCorrect; 
+
+            // 3. CHỈ PHÁT ÂM THANH "ĐÚNG" (Đồng nhất V7)
+            playSound('correct');
+            
+            // 4. CẬP NHẬT ĐIỂM THỰC TẾ (Ẩn với người chơi)
+            if (isCorrect) {
+                 correctChallenges++;
+            }
+
+            document.getElementById('next-button').classList.remove('hidden');
+        }
+
+        // --- Dạng Nối cột (Matching) ---
+        function loadMatching(challenge, container) {
+            const matchingArea = document.createElement('div');
+            matchingArea.className = 'matching-area';
+            
+            const columnA = document.createElement('div');
+            columnA.className = 'matching-column column-A';
+            const columnB = document.createElement('div');
+            columnB.className = 'matching-column column-B';
+            
+            // SVG cho đường kẻ
+            const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+            svg.classList.add('line-svg');
+            // Thêm định nghĩa mũi tên
+            svg.innerHTML = `
+                <defs>
+                    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto">
+                        <polygon points="0 0, 10 3.5, 0 7" fill="var(--text-color)" />
+                    </marker>
+                </defs>
+            `;
+
+            challenge.matches.forEach((match, index) => {
+                // Mục cột A
+                const itemA = document.createElement('div');
+                itemA.className = 'match-item column-A';
+                itemA.id = `item-A-${index}`;
+                itemA.textContent = match.left;
+                itemA.dataset.key = match.left;
+                itemA.onclick = () => handleMatchClick(itemA, 'A', challenge, svg);
+                columnA.appendChild(itemA);
+                
+                // Mục cột B (sử dụng shuffledMatchesB)
+                const itemB = document.createElement('div');
+                itemB.className = 'match-item column-B';
+                itemB.id = `item-B-${index}`;
+                itemB.textContent = challenge.shuffledMatchesB[index];
+                itemB.dataset.key = challenge.shuffledMatchesB[index];
+                itemB.onclick = () => handleMatchClick(itemB, 'B', challenge, svg);
+                columnB.appendChild(itemB);
+            });
+
+            matchingArea.appendChild(svg);
+            matchingArea.appendChild(columnA);
+            matchingArea.appendChild(columnB);
+            container.appendChild(matchingArea);
+            
+            challenge.domElements = { columnA: columnA, columnB: columnB, svg: svg };
+        }
+
+        function handleMatchClick(item, column, challenge, svg) {
+            if (challenge.answered) return;
+
+            // 1. Nếu đang chọn cột A
+            if (column === 'A') {
+                if (selectedItemA) {
+                    selectedItemA.classList.remove('selected');
+                }
+                if (selectedItemA === item) {
+                    selectedItemA = null; // Bỏ chọn
+                } else {
+                    item.classList.add('selected');
+                    selectedItemA = item;
+                }
+            } 
+            // 2. Nếu chọn cột B
+            else if (column === 'B') {
+                if (!selectedItemA) {
+                    alert('Vui lòng chọn mục ở cột bên trái trước.');
+                    return;
+                }
+
+                // Lấy khóa từ itemA và itemB
+                const keyA = selectedItemA.dataset.key;
+                const keyB = item.dataset.key;
+                
+                // Cập nhật kết nối hiện tại
+                challenge.connections[keyA] = keyB;
+
+                // Xóa các đường kẻ cũ và vẽ lại
+                drawConnections(challenge, svg);
+
+                // Bỏ chọn cột A
+                selectedItemA.classList.remove('selected');
+                selectedItemA = null;
+                
+                // Kiểm tra hoàn thành
+                checkMatchingComplete(challenge, svg);
+            }
+        }
+        
+        function drawConnections(challenge, svg) {
+            svg.innerHTML = `
+                <defs>
+                    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto">
+                        <polygon points="0 0, 10 3.5, 0 7" fill="var(--text-color)" />
+                    </marker>
+                </defs>
+            `; // Reset SVG (giữ mũi tên)
+
+            const containerRect = svg.parentElement.getBoundingClientRect();
+            
+            Object.keys(challenge.connections).forEach(keyA => {
+                const keyB = challenge.connections[keyA];
+                
+                const itemA = Array.from(challenge.domElements.columnA.children).find(el => el.dataset.key === keyA);
+                const itemB = Array.from(challenge.domElements.columnB.children).find(el => el.dataset.key === keyB);
+                
+                if (itemA && itemB) {
+                    const rectA = itemA.getBoundingClientRect();
+                    const rectB = itemB.getBoundingClientRect();
+                    
+                    // Tính tọa độ (tương đối với SVG container)
+                    const x1 = rectA.right - containerRect.left;
+                    const y1 = rectA.top + rectA.height / 2 - containerRect.top;
+                    const x2 = rectB.left - containerRect.left;
+                    const y2 = rectB.top + rectB.height / 2 - containerRect.top;
+
+                    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                    line.setAttribute('x1', x1);
+                    line.setAttribute('y1', y1);
+                    line.setAttribute('x2', x2 - 5); // Trừ 5 để mũi tên nằm trên itemB
+                    line.setAttribute('y2', y2);
+                    line.setAttribute('class', 'connection-line');
+                    line.setAttribute('data-key-a', keyA);
+                    line.setAttribute('data-key-b', keyB);
+                    svg.appendChild(line);
+                }
+            });
+        }
+        
+        // ✅ Cập nhật hàm kiểm tra Nối cột (V7 Logic)
+        function checkMatchingComplete(challenge, svg) {
+            const allItemsCount = challenge.matches.length;
+            const connectedItemsCount = Object.keys(challenge.connections).length;
+
+            if (connectedItemsCount === allItemsCount) {
+                challenge.answered = true;
+                let allCorrect = true;
+
+                // 1. Kiểm tra kết quả thực tế (Ẩn)
+                Object.keys(challenge.connections).forEach(keyA => {
+                    if (challenge.connections[keyA] !== challenge.correctConnections[keyA]) {
+                        allCorrect = false;
+                    }
+                });
+                
+                challenge.isCorrect = allCorrect;
+
+                // 2. HIỂN THỊ: Luôn luôn tô màu Xanh Lá cho tất cả các mục đã nối (V7 Logic)
+                const allMatchItems = document.querySelectorAll('.match-item');
+                allMatchItems.forEach(item => {
+                    item.classList.add('match-done'); 
+                    item.onclick = null; // Vô hiệu hóa click
+                });
+
+                // 3. Cập nhật điểm và phát âm thanh (Chỉ dùng 'correct' để khuyến khích)
+                if (allCorrect) { 
+                    correctChallenges++; 
+                    playSound('correct'); 
+                } else {
+                    playSound('correct'); // Dùng âm thanh "đúng" ngay cả khi sai (V7 Logic)
+                }
+
+                // 4. Hiển thị nút tiếp tục
+                document.getElementById('next-button').classList.remove('hidden');
+            }
+        }
+
+        // --- Dạng Kéo thả (Drag and Drop) --- (Giữ nguyên logic V7 đã sửa ở lần trước)
+        function loadDragDrop(challenge, container) {
+            const dragDropArea = document.createElement('div');
+            dragDropArea.className = 'drag-drop-area';
+
+            const dragSource = document.createElement('div');
+            dragSource.className = 'drag-source';
+
+            challenge.shuffledItems.forEach(item => {
+                const dragItem = document.createElement('div');
+                dragItem.className = 'drag-item';
+                dragItem.textContent = item.text;
+                dragItem.dataset.category = item.category;
+                dragSource.appendChild(dragItem);
+            });
+
+            dragDropArea.appendChild(dragSource);
+
+            challenge.domElements = {};
+            challenge.categories.forEach(category => {
+                const dropTarget = document.createElement('div');
+                dropTarget.className = 'drop-target';
+                dropTarget.dataset.category = category;
+                dropTarget.innerHTML = `<h3>${category}</h3>`;
+                dragDropArea.appendChild(dropTarget);
+                challenge.domElements[category] = dropTarget;
+            });
+
+            container.appendChild(dragDropArea);
+
+            // ✅ Kích hoạt SortableJS
+            new Sortable(dragSource, { group: 'shared', animation: 150 });
+            challenge.categories.forEach(category => {
+                new Sortable(challenge.domElements[category], {
+                    group: 'shared',
+                    animation: 150,
+                    onAdd: () => checkDragDropComplete(challenge)
+                });
+            });
+        }
+
+        function checkDragDropComplete(challenge) {
+            const dragSource = document.querySelector('.drag-source');
+            if (dragSource.children.length === 0) {
+                challenge.answered = true;
+                let allCorrect = true;
+                
+                challenge.categories.forEach(category => {
+                    const dropTarget = challenge.domElements[category];
+                    Array.from(dropTarget.querySelectorAll('.drag-item')).forEach(item => {
+                        // Kiểm tra kết quả thực tế (Ẩn)
+                        if (item.dataset.category !== category) {
+                            allCorrect = false;
+                        }
+                        
+                        // HIỂN THỊ: Luôn luôn tô màu Xanh Lá (Correct) cho mục đã kéo thả (V7 Logic)
+                        item.classList.add('correct-answer'); 
+                        item.classList.remove('incorrect-answer');
+                        item.draggable = false;
+                    });
+                });
+                
+                challenge.isCorrect = allCorrect;
+                
+                // Cập nhật điểm và phát âm thanh (Chỉ dùng 'correct' để khuyến khích)
+                if (allCorrect) { 
+                    correctChallenges++; 
+                    playSound('correct'); 
+                } else {
+                    playSound('correct'); // Dùng âm thanh "đúng" ngay cả khi sai (V7 Logic)
+                }
+                
+                document.getElementById('next-button').classList.remove('hidden');
+            }
+        }
+
+
+        // --- Chuyển sang thử thách tiếp theo ---
+
+        function nextChallenge() {
+            currentChallengeIndex++;
+            loadChallenge();
+        }
+
+        // === Phần 3: Kết quả và Lưu trữ ===
+
+        function finishGame() {
+            const endTime = Date.now();
+            const totalTime = endTime - startTime;
+            
+            document.getElementById('game-section').classList.add('hidden');
+            document.getElementById('result-section').classList.remove('hidden');
+
+            const totalChallenges = questions.length;
+            const percentageValue = (correctChallenges / totalChallenges) * 100;
+            const percentage = percentageValue.toFixed(0) + '%';
+            
+            let reviewText;
+            let reviewClass;
+
+            if (percentageValue === 100) {
+                reviewText = "Xuất sắc! Em đã hoàn thành thử thách 10 ngón một cách tuyệt vời! 💯";
+                reviewClass = 'review-excellent';
+            } else if (percentageValue >= 70) {
+                reviewText = "Em làm rất tốt! Em đã nắm vững kiến thức về tư thế và hàng phím cơ sở. 👍";
+                reviewClass = 'review-good';
+            } else {
+                reviewText = "Em cần ôn tập kĩ hơn về tư thế ngồi và cách đặt tay đúng. 💪";
+                reviewClass = 'review-need-review';
+            }
+
+            // Hiển thị kết quả
+            document.getElementById('res-name').textContent = playerInfo.name;
+            document.getElementById('res-class').textContent = playerInfo.class;
+            document.getElementById('res-play-count').textContent = playerInfo.playCount;
+            document.getElementById('res-total-challenges').textContent = totalChallenges;
+            document.getElementById('res-correct-challenges').textContent = correctChallenges;
+            document.getElementById('res-percentage').textContent = percentage;
+            document.getElementById('res-time').textContent = formatTime(totalTime);
+            document.getElementById('review-text').textContent = reviewText;
+            document.getElementById('review-text').className = 'review-text ' + reviewClass;
+            
+            document.getElementById('correct-count-display').textContent = correctChallenges; // Cập nhật lại điểm cuối cùng
+            playSound('complete');
+        }
+
+        function shareResult() {
+            const resultSection = document.getElementById('result-section');
+            html2canvas(resultSection, {
+                scale: 2, 
+                backgroundColor: null 
+            }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `KetQua_ThuThach10Ngon_${playerInfo.name}_${Date.now()}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            }).catch(error => {
+                console.error("Lỗi khi chụp ảnh: ", error);
+                alert("Đã xảy ra lỗi khi tạo ảnh kết quả.");
+            });
+        }
+  </script>
+</body>
+</html>

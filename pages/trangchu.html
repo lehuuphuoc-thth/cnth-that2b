@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bảng Xếp Hạng Công Nghệ & Tin Học</title>
+    <!-- Tải Tailwind CSS cho giao diện đẹp và responsive -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tải thư viện Tone.js cho âm thanh vui tươi -->
+    <script src="https://unpkg.com/tone@14.7.58/build/Tone.js"></script>
+    <style>
+        /* Tùy chỉnh font chữ Inter và làm cho giao diện trở nên vui nhộn hơn */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f9ff; /* Màu nền xanh da trời nhạt */
+        }
+        .header-bg {
+            background-image: linear-gradient(to right, #4c51bf, #667eea); /* Gradient tím-xanh */
+        }
+        .card-shadow { box-shadow: 0 10px 20px rgba(0,0,0,0.1), 0 6px 6px rgba(0,0,0,0.06); }
+        .loading-spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: #6366f1;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* --- STYLES CHO TOP 3 ĐƯỢC CẬP NHẬT --- */
+
+        /* Hiệu ứng chung cho tất cả các hàng */
+        #leaderboard-body tr {
+            transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+            border-radius: 0.5rem; /* Góc bo tròn cho hàng */
+        }
+        
+        /* Hiệu ứng hover cho các hàng thường (không phải top 3) */
+        #leaderboard-body tr:not(.top-rank-row):hover {
+            background-color: #f5f5f5; 
+            transform: scale(1.005);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Màu rực rỡ cho Hạng 1 (Vàng) */
+        .rank-gold { 
+            background-color: #ffeb3b; 
+            color: #a0522d; 
+            border: 4px solid #fbc02d; 
+        }
+        /* Màu rực rỡ cho Hạng 2 (Bạc) */
+        .rank-silver { 
+            background-color: #bdbdbd; 
+            color: #424242; 
+            border: 4px solid #757575; 
+        }
+        /* Màu rực rỡ cho Hạng 3 (Đồng) */
+        .rank-bronze { 
+            background-color: #d7885b; 
+            color: #ffffff; 
+            border: 4px solid #a15f3a; 
+        }
+
+        /* Lớp cho hàng Top 3: đảm bảo font lớn hơn và hiệu ứng hover mạnh hơn */
+        .top-rank-row {
+            font-size: 1.1rem; /* Kích thước font cơ bản lớn hơn */
+            font-weight: 700;
+        }
+
+        /* Hiệu ứng hover cho Top 3: Nổi bật hơn */
+        .top-rank-row:hover {
+            transform: scale(1.02); /* Nổi lên rõ rệt */
+            box-shadow: 0 15px 30px rgba(76, 81, 191, 0.3); /* Bóng đổ tím rực rỡ */
+            z-index: 10;
+            position: relative; 
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-8">
+
+    <!-- Thanh header và Tiêu đề -->
+    <header class="header-bg p-6 rounded-xl shadow-lg mb-8 text-white">
+        <h1 class="text-4xl font-extrabold text-center tracking-tight">
+            🏆 BẢNG XẾP HẠNG TÀI NĂNG NHÍ (TIN HỌC & CÔNG NGHỆ) 💻
+        </h1>
+        <p class="text-center text-xl mt-2 font-light">
+            Trường Tiểu Học An Thạnh 2 - Năm Học 2025-2026
+        </p>
+    </header>
+
+    <!-- Khu vực Chọn Bảng Xếp Hạng -->
+    <div id="selection-section" class="bg-white p-6 rounded-xl card-shadow mb-8 border border-indigo-200">
+        <h2 class="text-2xl font-bold mb-4 text-indigo-600">Chọn Bảng Xếp Hạng</h2>
+        <p class="text-sm mb-4 text-gray-600 font-semibold">
+            Chọn khối lớp bạn muốn hiển thị bảng xếp hạng:
+        </p>
+        <select id="sheet-selector"
+               class="w-full p-3 border-2 border-indigo-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 text-lg">
+            <!-- Options sẽ được thêm vào bằng JavaScript -->
+        </select>
+        <p id="error-message" class="text-red-500 mt-2 hidden text-sm font-medium"></p>
+    </div>
+
+    <!-- Khu vực Bảng Xếp Hạng Chính -->
+    <div id="leaderboard-section" class="bg-white p-4 md:p-8 rounded-xl card-shadow">
+        <div class="flex items-center justify-between mb-6">
+            <h2 class="text-3xl font-extrabold text-gray-800">
+                ⭐ <span id="current-leaderboard-title">...</span>
+            </h2>
+            <button id="refresh-btn"
+                    class="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-full transition duration-300 shadow-md flex items-center">
+                <div id="loading-indicator" class="loading-spinner mr-2 hidden"></div>
+                <svg id="refresh-icon" class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 19m4.356 2H15V19"></path></svg>
+                Tải Lại
+            </button>
+        </div>
+
+        <!-- Bảng xếp hạng -->
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-indigo-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider rounded-tl-lg">Hạng</th>
+                        <th class="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Họ và Tên</th>
+                        <th class="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Lớp</th> <!-- Cột mới: Lớp -->
+                        <th class="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider rounded-tr-lg">Tổng điểm</th>
+                    </tr>
+                </thead>
+                <tbody id="leaderboard-body" class="bg-white divide-y divide-gray-100">
+                    <!-- Dữ liệu sẽ được chèn vào đây bởi JavaScript -->
+                    <tr><td colspan="4" class="text-center py-8 text-gray-500">Vui lòng chọn một Bảng Xếp Hạng ở trên để xem dữ liệu.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Chú thích vui vẻ -->
+    <footer class="mt-8 text-center text-gray-500 text-sm">
+        <p>Chúc mừng những "Chú Ong chăm chỉ" đã hoàn thành xuất sắc thử thách!</p>
+    </footer>
+
+    <!-- Dữ liệu JSON cấu hình Bảng Xếp Hạng (Dễ dàng chỉnh sửa) -->
+    <script type="application/json" id="leaderboard-data">
+[
+    {
+        "key": "khoi_4_tong_hop",
+        "title": "Bảng Xếp Hạng Khối 4",
+        "spreadsheetId": "1e72CzgD91I_4qj0kEQ0B0UxcE903axcxPWyTu4pNmzc",
+        "gid": "69854433"
+    },
+    {
+        "key": "khoi_5_tong_hop",
+        "title": "Bảng Xếp Hạng Khối 5",
+        "spreadsheetId": "1yLxFYp99eymGr58E1bqGZNAhKUvhyaIeSZPEDM-CxPA",
+        "gid": "431843891"
+    }
+]
+    </script>
+
+    <script>
+        // Hàm tải cấu hình JSON từ thẻ script
+        function loadConfig() {
+            const scriptTag = document.getElementById('leaderboard-data');
+            if (!scriptTag || !scriptTag.textContent) {
+                console.error("LỖI CẤU HÌNH: Không tìm thấy thẻ <script id='leaderboard-data'> hoặc thẻ bị rỗng.");
+                return {};
+            }
+
+            try {
+                // Phân tích cú pháp mảng JSON
+                const arrayConfig = JSON.parse(scriptTag.textContent.trim());
+                
+                // Chuyển mảng thành đối tượng (Map) để dễ dàng tra cứu bằng 'key'
+                return arrayConfig.reduce((acc, current) => {
+                    // Đảm bảo có key trước khi thêm
+                    if (current.key) {
+                        acc[current.key] = current;
+                    } else {
+                        console.warn("CẤU HÌNH CẢNH BÁO: Một mục trong JSON không có 'key' và đã bị bỏ qua.");
+                    }
+                    return acc;
+                }, {});
+            } catch (e) {
+                console.error("LỖI CẤU HÌNH: Không thể phân tích cú pháp JSON. Vui lòng kiểm tra dấu phẩy, dấu ngoặc kép, và cấu trúc.", e);
+                return {};
+            }
+        }
+
+        const GOOGLE_SHEET_CONFIG = loadConfig();
+        
+        // Cấu hình Tone.js cho âm thanh
+        const playCheerSound = () => {
+            try {
+                // Khởi tạo một bộ tổng hợp đơn giản (Synth)
+                const synth = new Tone.Synth({
+                    oscillator: {
+                        type: "triangle"
+                    },
+                    envelope: {
+                        attack: 0.005,
+                        decay: 0.1,
+                        sustain: 0.05,
+                        release: 0.5,
+                    }
+                }).toDestination();
+                // Phát ra một nốt nhạc vui vẻ
+                Tone.start();
+                synth.triggerAttackRelease("C5", "8n");
+                synth.triggerAttackRelease("E5", "8n", "+0.1");
+                synth.triggerAttackRelease("G5", "8n", "+0.2");
+            } catch (e) {
+                console.warn("Lỗi phát âm thanh Tone.js:", e);
+            }
+        };
+
+        const sheetSelector = document.getElementById('sheet-selector');
+        const refreshBtn = document.getElementById('refresh-btn');
+        const loadingIndicator = document.getElementById('loading-indicator');
+        const refreshIcon = document.getElementById('refresh-icon');
+        const errorMsg = document.getElementById('error-message');
+        const leaderboardBody = document.getElementById('leaderboard-body');
+        const currentTitle = document.getElementById('current-leaderboard-title');
+
+        // Định nghĩa các hằng số cho key trong data (tương ứng với cột trong Sheet)
+        // Cập nhật để phù hợp với cấu trúc Sheet: Hạng, Họ và tên, Lớp, Tổng điểm
+        const COL_RANK = 'Xếp hạng';   // Cột 5 (E)
+        const COL_NAME = 'Họ và Tên';   // Cột 2 (B)
+        const COL_CLASS = 'Lớp';        // Cột 3 (C)
+        const COL_SCORE = 'Tổng điểm';  // Cột 4 (D)
+
+        // Hàm tạo URL CSV từ config
+        const createCsvUrl = (config) => {
+            // Đảm bảo URL là công khai (publis on the web)
+            return `https://docs.google.com/spreadsheets/d/${config.spreadsheetId}/gviz/tq?tqx=out:csv&gid=${config.gid}`;
+        };
+
+        // Hàm chuyển đổi CSV thành mảng đối tượng JavaScript
+        function csvToJson(csv) {
+            const lines = csv.split('\n').filter(line => line.trim() !== '');
+            if (lines.length === 0) return [];
+
+            // Tách header (Dòng đầu tiên, loại bỏ khoảng trắng dư thừa)
+            const headers = lines[0].split(',').map(header => header.trim().replace(/"/g, ''));
+
+            const result = [];
+            for (let i = 1; i < lines.length; i++) {
+                const currentline = lines[i];
+                if (!currentline) continue;
+
+                // Tách dựa trên dấu phẩy, bao gồm cả xử lý dấu ngoặc kép (nếu có)
+                const values = [];
+                let match;
+                const regex = /(?:^|,)(\"(?:[^\"]+|\"\")*\"|[^,]*)/g;
+
+                while (match = regex.exec(currentline)) {
+                    let value = match[1];
+                    if (value.startsWith(',')) value = value.substring(1);
+                    value = value.trim().replace(/^"|"$/g, '').trim();
+                    values.push(value);
+                }
+
+                if (values.length !== headers.length) continue;
+
+                const obj = {};
+                for (let j = 0; j < headers.length; j++) {
+                    obj[headers[j]] = values[j];
+                }
+
+                // Chỉ lấy các đối tượng có đủ trường Tên và Điểm
+                if (obj[COL_NAME] && obj[COL_SCORE] && obj[COL_RANK]) { // Đảm bảo có đủ 3 cột cần thiết
+                     // Chuyển Điểm Số và Xếp hạng thành số
+                    obj[COL_SCORE] = parseFloat(obj[COL_SCORE].replace(/[^0-9.]/g, '')) || 0;
+                    // Lấy Hạng từ cột "Xếp hạng" (có thể là số hoặc chuỗi)
+                    obj[COL_RANK] = parseInt(obj[COL_RANK]) || 0; 
+                    result.push(obj);
+                }
+            }
+            return result;
+        }
+
+        // Hàm sắp xếp bảng xếp hạng (chỉ dựa vào Tổng điểm) - Giữ nguyên vì điểm vẫn là yếu tố chính
+        function sortData(data) {
+            // Sắp xếp giảm dần theo Tổng điểm
+            return data.sort((a, b) => b[COL_SCORE] - a[COL_SCORE]);
+        }
+
+        // Hàm render dữ liệu ra bảng HTML
+        function renderLeaderboard(data) {
+            leaderboardBody.innerHTML = '';
+
+            if (data.length === 0) {
+                // Cập nhật colspan từ 3 lên 4
+                leaderboardBody.innerHTML = '<tr><td colspan="4" class="text-center py-8 text-gray-500 font-semibold">Không tìm thấy dữ liệu hợp lệ trong Sheet này.</td></tr>';
+                return;
+            }
+
+            const sortedData = sortData(data);
+
+            sortedData.forEach((row, index) => {
+                // Lấy hạng trực tiếp từ cột 'Xếp hạng' của Sheet
+                const rank = row[COL_RANK]; 
+                let rankClasses = 'bg-white text-gray-800';
+                let rankSymbol = rank;
+                let rowClasses = '';
+
+                // Cập nhật: Áp dụng class, kích thước chữ và màu sắc rực rỡ cho Top 3
+                let nameTextSize = 'text-base font-medium text-gray-900';
+                let scoreTextSize = 'text-sm font-semibold text-indigo-600';
+                // Style cho cột Lớp (mới)
+                let classTextSize = 'text-sm font-semibold text-gray-700';
+
+                if (rank === 1) {
+                    rankClasses = 'rank-gold font-extrabold text-lg';
+                    rankSymbol = '🥇 ' + rank;
+                    rowClasses = 'top-rank-row shadow-lg bg-yellow-50'; // Hàng nền vàng nhạt
+                    nameTextSize = 'text-xl font-extrabold text-indigo-800';
+                    scoreTextSize = 'text-xl font-extrabold text-red-600';
+                    classTextSize = 'text-base font-extrabold text-green-700';
+                } else if (rank === 2) {
+                    rankClasses = 'rank-silver font-bold';
+                    rankSymbol = '🥈 ' + rank;
+                    rowClasses = 'top-rank-row shadow-lg bg-gray-100'; // Hàng nền xám nhạt
+                    nameTextSize = 'text-lg font-bold text-gray-800';
+                    scoreTextSize = 'text-lg font-bold text-orange-500';
+                    classTextSize = 'text-base font-bold text-green-600';
+                } else if (rank === 3) {
+                    rankClasses = 'rank-bronze font-bold text-white';
+                    rankSymbol = '🥉 ' + rank;
+                    rowClasses = 'top-rank-row shadow-lg bg-amber-50'; // Hàng nền cam nhạt
+                    nameTextSize = 'text-lg font-bold text-gray-700';
+                    scoreTextSize = 'text-lg font-bold text-indigo-500';
+                    classTextSize = 'text-base font-bold text-green-500';
+                } else if (rank <= 10) {
+                    rankSymbol = '⭐ ' + rank;
+                } else {
+                    rankSymbol = rank; // Dùng hạng từ sheet cho tất cả các hàng
+                }
+
+                const rowHtml = `
+                    <tr class="${rowClasses} transition duration-150">
+                        <td class="px-6 py-3 whitespace-nowrap text-center text-sm ${rankClasses} rounded-lg border-r-4 border-white">${rankSymbol}</td>
+                        <td class="px-6 py-3 whitespace-nowrap ${nameTextSize}">${row[COL_NAME]}</td>
+                        <td class="px-6 py-3 whitespace-nowrap ${classTextSize}">${row[COL_CLASS] || 'N/A'}</td> <!-- HIỂN THỊ LỚP -->
+                        <td class="px-6 py-3 whitespace-nowrap ${scoreTextSize}">${row[COL_SCORE].toLocaleString()}</td>
+                    </tr>
+                `;
+                leaderboardBody.innerHTML += rowHtml;
+            });
+        }
+
+        // Hàm chính để tải dữ liệu
+        async function fetchLeaderboardData(key) {
+            const config = GOOGLE_SHEET_CONFIG[key];
+            if (!config) return;
+
+            const url = createCsvUrl(config);
+            currentTitle.textContent = config.title;
+
+            loadingIndicator.classList.remove('hidden');
+            refreshIcon.classList.add('hidden');
+            errorMsg.classList.add('hidden');
+            // Cập nhật colspan từ 3 lên 4
+            leaderboardBody.innerHTML = '<tr><td colspan="4" class="text-center py-8 text-indigo-500 font-semibold">Đang tải dữ liệu... 🚀</td></tr>';
+
+            try {
+                // Đợi Tone.js khởi động (quan trọng cho lần nhấp đầu tiên)
+                await Tone.start();
+
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`Lỗi tải dữ liệu. Hãy kiểm tra cài đặt "Xuất bản lên web" cho Sheet ID ${config.spreadsheetId} và gid ${config.gid}.`);
+                }
+                const csvText = await response.text();
+                const data = csvToJson(csvText);
+
+                renderLeaderboard(data);
+                playCheerSound();
+                localStorage.setItem('leaderboardSelection', key); // Lưu lựa chọn hiện tại
+
+            } catch (error) {
+                console.error("LỖI TẢI DỮ LIỆU:", error);
+                errorMsg.textContent = `Lỗi tải [${config.title}]: ${error.message}`;
+                errorMsg.classList.remove('hidden');
+                // Cập nhật colspan từ 3 lên 4
+                leaderboardBody.innerHTML = '<tr><td colspan="4" class="text-center py-8 text-red-500 font-semibold">Tải thất bại. Vui lòng xem console hoặc kiểm tra URL/cài đặt công khai.</td></tr>';
+            } finally {
+                loadingIndicator.classList.add('hidden');
+                refreshIcon.classList.remove('hidden');
+            }
+        }
+
+        // Hàm khởi tạo Dropdown và Listener
+        function initApp() {
+            const configKeys = Object.keys(GOOGLE_SHEET_CONFIG);
+            
+            // --- DEBUG CHECK ---
+            console.log(`[DEBUG] Số lượng cấu hình bảng xếp hạng được tải: ${configKeys.length}`);
+            // -------------------
+            
+            if (configKeys.length === 0) {
+                 errorMsg.textContent = 'Lỗi cấu hình: Không tìm thấy dữ liệu bảng xếp hạng nào được định nghĩa.';
+                 errorMsg.classList.remove('hidden');
+                 return;
+            }
+
+            // 1. Tạo Options cho Dropdown (Bao gồm Placeholder)
+            // Thêm tùy chọn rỗng/placeholder ở đầu và đặt nó là 'disabled' và 'selected'
+            let optionsHtml = '<option value="" disabled selected>--- Chọn Bảng Xếp Hạng ---</option>'; 
+            for (const key of configKeys) {
+                optionsHtml += `<option value="${key}">${GOOGLE_SHEET_CONFIG[key].title}</option>`;
+            }
+            sheetSelector.innerHTML = optionsHtml;
+
+            // 2. Tải Sheet đã lưu hoặc để Placeholder được chọn
+            const savedKey = localStorage.getItem('leaderboardSelection'); // Không đặt giá trị mặc định ban đầu
+            let initialKey = null;
+
+            if (savedKey && GOOGLE_SHEET_CONFIG[savedKey]) {
+                // Nếu có key đã lưu và hợp lệ, chọn nó và tải dữ liệu
+                initialKey = savedKey;
+                sheetSelector.value = initialKey;
+                fetchLeaderboardData(initialKey);
+            } else {
+                 // Không có key được lưu, hoặc key không hợp lệ, giữ placeholder được chọn
+                sheetSelector.value = ""; 
+                // Cập nhật colspan từ 3 lên 4
+                leaderboardBody.innerHTML = '<tr><td colspan="4" class="text-center py-8 text-gray-500 font-semibold">Vui lòng chọn một Bảng Xếp Hạng ở trên để xem dữ liệu.</td></tr>';
+                currentTitle.textContent = "Chưa Chọn";
+            }
+            
+            // 3. Lắng nghe sự kiện thay đổi Dropdown
+            sheetSelector.addEventListener('change', (e) => {
+                const selectedKey = e.target.value;
+                if (selectedKey) { // Đảm bảo không gọi với giá trị rỗng của placeholder
+                    fetchLeaderboardData(selectedKey);
+                    errorMsg.classList.add('hidden'); // Ẩn lỗi nếu chọn thành công
+                }
+            });
+
+            // 4. Lắng nghe sự kiện Tải Lại
+            refreshBtn.addEventListener('click', () => {
+                const selectedKey = sheetSelector.value;
+                if (selectedKey) { // Chỉ tải lại nếu đã có key được chọn
+                    fetchLeaderboardData(selectedKey);
+                } else {
+                    errorMsg.textContent = 'Vui lòng chọn một Bảng Xếp Hạng trước khi tải lại.';
+                    errorMsg.classList.remove('hidden');
+                }
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>

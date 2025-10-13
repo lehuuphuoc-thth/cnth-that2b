@@ -1,0 +1,1014 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Công nghệ 5 - Bài 2: Nhà Sáng Chế Tí Hon</title>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <style>
+        /* CSS cho trò chơi */
+        :root {
+            --primary-color: #03A9F4; /* Màu Xanh Dương - chủ đạo Công nghệ */
+            --secondary-color: #81D4FA; /* Màu Xanh nhạt - làm nổi bật */
+            --background-color: #E1F5FE; /* Nền Xanh nhạt */
+            --card-color: #FFFFFF;
+            --correct-color: #4CAF50; /* Xanh lá */
+            --incorrect-color: #F44336; /* Đỏ (Vẫn giữ định nghĩa nhưng không dùng trong logic chọn đáp án) */
+            --text-color: #01579B; /* Xanh đậm */
+            --font-family: 'Arial', sans-serif;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 10px rgba(3, 169, 244, 0.5); }
+            50% { box-shadow: 0 0 20px rgba(3, 169, 244, 0.8); }
+            100% { box-shadow: 0 0 10px rgba(3, 169, 244, 0.5); }
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--background-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #4FC3F7 0%, #E1F5FE 100%);
+        }
+
+        .game-container {
+            background-color: var(--card-color);
+            border-radius: 20px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+            padding: 30px;
+            max-width: 800px;
+            width: 100%;
+            text-align: center;
+            transition: all 0.5s ease-in-out;
+            position: relative;
+            border: 4px solid var(--primary-color);
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        h1 {
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            font-size: 2.5em;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+
+        /* --- Phần 1: Điền thông tin --- */
+        #info-section input {
+            width: calc(100% - 20px);
+            padding: 12px;
+            margin: 10px 0;
+            border: 2px solid var(--primary-color);
+            border-radius: 10px;
+            font-size: 1.1em;
+            box-sizing: border-box;
+        }
+
+        .btn {
+            background-color: var(--primary-color);
+            color: var(--card-color);
+            padding: 15px 30px;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-top: 20px;
+            transition: background-color 0.3s, transform 0.1s;
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+            animation: pulse 2s infinite;
+        }
+
+        .btn:hover {
+            background-color: #01579B;
+            transform: translateY(-3px);
+            animation: none;
+        }
+
+        /* --- Phần 2: Trò chơi --- */
+        #game-section {
+            text-align: left;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        #challenge-counter {
+            font-size: 1.4em;
+            color: var(--text-color);
+            margin-bottom: 15px;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #B3E5FC;
+            padding-bottom: 5px;
+        }
+
+        #challenge-text {
+            background-color: #B3E5FC;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            font-size: 1.3em;
+            border-left: 5px solid var(--primary-color);
+        }
+
+        .options-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .option-btn {
+            background-color: #f0f0f0;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1.1em;
+            text-align: left;
+            transition: background-color 0.2s, border-color 0.2s;
+        }
+
+        .option-btn:hover:not(.correct):not(.incorrect):not([disabled]) {
+            background-color: #E0F7FA;
+            border-color: var(--secondary-color);
+        }
+        
+        /* CSS Phân biệt Đúng/Sai cho nút trắc nghiệm */
+        /* QUAN TRỌNG: Chỉ sử dụng màu Correct (Xanh lá) cho mọi lựa chọn */
+        .option-btn.correct { 
+            background-color: var(--correct-color); /* Xanh lá */
+            color: white;
+            border-color: #388E3C;
+            font-weight: bold;
+        }
+        
+        /* CSS này sẽ không được sử dụng cho trắc nghiệm */
+        .option-btn.incorrect { 
+            background-color: var(--incorrect-color); 
+            color: white;
+            border-color: #D32F2F;
+            font-weight: bold;
+        }
+        
+        /* Đảm bảo nút đã chọn không bị mất màu khi áp dụng màu kết quả */
+        .option-btn.selected:not(.correct):not(.incorrect) {
+            background-color: #4FC3F7; 
+            border-color: var(--primary-color);
+            font-weight: bold;
+            color: var(--text-color);
+        }
+        
+        /* Dạng Kéo thả (Drag and Drop) */
+        .drag-drop-area {
+            display: flex;
+            justify-content: space-around;
+            gap: 20px;
+            min-height: 250px;
+            text-align: center;
+        }
+        
+        .drop-target {
+            flex: 1;
+            background-color: #B3E5FC; /* Xanh nhạt */
+            padding: 15px;
+            border-radius: 15px;
+            border: 3px dashed var(--primary-color);
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            font-weight: bold;
+        }
+        
+        .drop-target.drag-over {
+            border-color: var(--correct-color);
+            background-color: #E0F7FA;
+        }
+        
+        .drag-item {
+            background-color: var(--primary-color); /* Xanh Dương */
+            color: var(--card-color);
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: grab;
+            margin: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            transition: transform 0.2s;
+            touch-action: none; /* Quan trọng cho mobile */
+        }
+
+        /* Tùy chỉnh cho phần tử đang kéo trên Mobile */
+        .drag-item.dragging { 
+            opacity: 0.8; 
+            transform: scale(1.1);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        /* CSS Phân biệt Đúng/Sai cho kéo thả */
+        /* QUAN TRỌNG: Sửa để chỉ dùng màu Xanh Lá cho mọi mục sau khi kéo thả */
+        .drag-item.correct-answer {
+            background-color: var(--correct-color); /* Xanh lá */
+            color: white;
+            border: 2px solid #388E3C;
+        }
+
+        /* LƯU Ý: Class này KHÔNG CÒN ĐƯỢC GÁN trong JS nữa */
+        .drag-item.incorrect-answer {
+            /* background-color: var(--incorrect-color); */ 
+            /* color: white; */
+            /* border: 2px solid #D32F2F; */
+            /* Bị ghi đè bởi correct-answer, hoặc tốt nhất là không gán */
+        }
+        
+        .drag-source {
+            background-color: #F1F8E9;
+            padding: 15px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            border: 1px solid #B3E5FC;
+        }
+        
+        /* Tùy chỉnh cho Drag-Drop kết quả */
+        .drop-target h3 {
+             color: var(--text-color);
+        }
+
+
+        /* --- Phần 3: Kết quả --- */
+        #result-section {
+            padding: 30px;
+            background: linear-gradient(135deg, #81D4FA 0%, #03A9F4 100%);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            position: relative;
+            margin-top: 20px;
+            color: #424242;
+        }
+
+        #result-info p {
+            font-size: 1.2em;
+            margin: 10px 0;
+            text-align: left;
+            color: #424242;
+        }
+
+        #result-info span {
+            font-weight: bold;
+            color: var(--text-color); 
+            float: right;
+        }
+
+        #review-text {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 10px;
+            color: white;
+            animation: pulse 1s infinite alternate;
+        }
+        
+        .review-excellent { background-color: var(--correct-color); }
+        .review-good { background-color: #FFB300; }
+        .review-need-review { background-color: var(--incorrect-color); }
+
+        #award-image {
+            width: 120px;
+            height: 120px;
+            margin: 20px auto;
+            background-color: var(--primary-color);
+            border: 6px solid var(--secondary-color);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 4em;
+            color: white;
+            box-shadow: 0 0 15px rgba(3, 169, 244, 0.8);
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .character-status span {
+            color: var(--primary-color);
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="game-container" id="game-area">
+        <h1>⚙️ NHÀ SÁNG CHẾ TÍ HON 💡</h1>
+
+        <div id="info-section">
+            <p>Chào em, hãy nhập thông tin để bắt đầu thử thách tìm hiểu về Nhà sáng chế!</p>
+            <input type="text" id="player-name" placeholder="Họ và tên của em" required>
+            <input type="text" id="player-class" placeholder="Lớp (Ví dụ: 5A1)" required>
+            <button class="btn" onclick="startGame()">Bắt đầu</button>
+        </div>
+
+        <div id="game-section" class="hidden">
+            <div id="challenge-counter">
+                <span>Thử thách: <span id="current-challenge-number">1</span> / 10</span>
+                <span id="player-status">Chào <span id="display-name"></span>!</span>
+            </div>
+            
+            <div id="challenge-text"></div>
+            
+            <div id="question-area">
+                </div>
+            
+            <div class="character-status">
+                Trạng thái: Đã hoàn thành đúng <span id="correct-count-display">0</span> thử thách
+            </div>
+
+            <button class="btn hidden" id="next-button" onclick="nextChallenge()">Tiếp tục 🚀</button>
+        </div>
+
+        <div id="result-section" class="hidden">
+            <h2>✨ CHÚC MỪNG EM ✨</h2>
+            <div id="result-info">
+                <p>Họ tên: <span id="res-name"></span></p>
+                <p>Lớp: <span id="res-class"></span></p>
+                <p>Số lần chơi: <span id="res-play-count"></span></p>
+                <p>Tổng thử thách: <span id="res-total-challenges"></span></p>
+                <p>Số thử thách đúng: <span id="res-correct-challenges"></span></p>
+                <p>% hoàn thành đúng: <span id="res-percentage"></span></p>
+                <p>Thời gian hoàn thành: <span id="res-time"></span></p>
+            </div>
+            <div id="review-text"></div>
+            <div id="award-image">⚙️</div>
+            <button class="btn" onclick="restartGame()">Chơi lại</button>
+            <button class="btn" onclick="shareResult()">Chia sẻ kết quả 📸</button>
+        </div>
+        
+        <audio id="sfx-correct" src="https://www.soundjay.com/buttons/button-2.mp3" preload="auto"></audio>
+        <audio id="sfx-incorrect" src="https://www.soundjay.com/buttons/button-3.mp3" preload="auto"></audio> 
+        <audio id="sfx-complete" src="https://www.soundjay.com/misc/fanfare.mp3" preload="auto"></audio>
+
+    </div>
+
+    <script>
+        // JavaScript cho trò chơi
+        const gameData = [
+            {
+                id: 1,
+                type: 'multiple-choice',
+                question: "Vai trò chính của sáng chế trong đời sống là gì?",
+                options: [
+                    { text: "Làm cho sản phẩm trở nên đẹp hơn.", isCorrect: false },
+                    { text: "Tạo ra sản phẩm mới hoặc cải tiến để giải quyết các vấn đề, đáp ứng nhu cầu của con người.", isCorrect: true },
+                    { text: "Chỉ để làm cho nhà sáng chế trở nên giàu có.", isCorrect: false },
+                    { text: "Ghi lại những điều đã xảy ra trong quá khứ.", isCorrect: false }
+                ],
+                answered: false,
+                isCorrect: null,
+                explanation: "Sáng chế ra đời để giải quyết vấn đề và đáp ứng nhu cầu của con người, đây là vai trò quan trọng nhất."
+            },
+            {
+                id: 2,
+                type: 'multiple-choice',
+                question: "Đức tính nào giúp nhà sáng chế vượt qua hàng ngàn lần thử nghiệm thất bại mà không bỏ cuộc?",
+                options: [
+                    { text: "Dũng cảm", isCorrect: false },
+                    { text: "Thông minh", isCorrect: false },
+                    { text: "Kiên trì và không nản chí.", isCorrect: true },
+                    { text: "Nhanh nhẹn", isCorrect: false }
+                ],
+                answered: false,
+                isCorrect: null,
+                explanation: "Kiên trì là phẩm chất cốt lõi giúp nhà sáng chế lặp lại và cải tiến cho đến khi thành công."
+            },
+            {
+                id: 3,
+                type: 'multiple-choice',
+                question: "Ai là người sáng chế ra **bóng đèn điện sợi đốt** và nổi tiếng với câu nói về sự thất bại là cần thiết cho thành công?",
+                options: [
+                    { text: "Alexander Graham Bell", isCorrect: false },
+                    { text: "Thomas Edison", isCorrect: true },
+                    { text: "Anh em nhà Wright", isCorrect: false },
+                    { text: "Nikola Tesla", isCorrect: false }
+                ],
+                answered: false,
+                isCorrect: null,
+                explanation: "Thomas Edison là nhà sáng chế vĩ đại đã phát minh ra bóng đèn điện và nhiều thiết bị quan trọng khác."
+            },
+            {
+                id: 4,
+                type: 'true-false',
+                question: "Một sáng chế chỉ được coi là thành công khi nó là một phát minh phức tạp, đắt tiền và phải được sử dụng rộng rãi trên toàn thế giới.",
+                answer: false, 
+                answered: false,
+                isCorrect: null,
+                explanation: "Sai. Một sáng chế thành công có thể là một cải tiến nhỏ, đơn giản nhưng hữu ích, giải quyết được vấn đề thực tế."
+            },
+            {
+                id: 5,
+                type: 'multiple-choice',
+                question: "Sáng chế tiêu biểu nào đã tạo ra bước ngoặt lớn, mở ra Kỷ nguyên Công nghiệp hóa, giúp di chuyển máy móc và tàu hỏa?",
+                options: [
+                    { text: "Bóng đèn điện", isCorrect: false },
+                    { text: "Động cơ hơi nước", isCorrect: true },
+                    { text: "Máy tính cá nhân", isCorrect: false },
+                    { text: "Điện thoại di động", isCorrect: false }
+                ],
+                answered: false,
+                isCorrect: null,
+                explanation: "Động cơ hơi nước là sáng chế then chốt của cuộc Cách mạng Công nghiệp lần thứ nhất, thay đổi hoàn toàn cách thức sản xuất và di chuyển."
+            },
+            {
+                id: 6,
+                type: 'multiple-choice',
+                question: "Phẩm chất nào thúc đẩy nhà sáng chế luôn tìm kiếm, quan sát và đặt câu hỏi 'Tại sao?', 'Làm thế nào?' về mọi thứ xung quanh?",
+                options: [
+                    { text: "Thận trọng", isCorrect: false },
+                    { text: "Tiết kiệm", isCorrect: false },
+                    { text: "Tò mò và óc quan sát", isCorrect: true },
+                    { text: "Cẩn thận", isCorrect: false }
+                ],
+                answered: false,
+                isCorrect: null
+            },
+            {
+                id: 7,
+                type: 'multiple-choice',
+                question: "**Anh em nhà Wright** nổi tiếng vì sáng chế ra sản phẩm công nghệ tiêu biểu nào trong lịch sử?",
+                options: [
+                    { text: "Tàu ngầm", isCorrect: false },
+                    { text: "Xe ô tô tự lái", isCorrect: false },
+                    { text: "Máy bay", isCorrect: true },
+                    { text: "Tàu vũ trụ", isCorrect: false }
+                ],
+                answered: false,
+                isCorrect: null,
+                explanation: "Anh em nhà Wright đã phát minh ra máy bay có động cơ thành công đầu tiên, mở ra kỷ nguyên hàng không."
+            },
+            {
+                id: 8,
+                type: 'multiple-choice',
+                question: "Việc tạo ra một sáng chế mới có vai trò gì đối với **sự phát triển của công nghệ**?",
+                options: [
+                    { text: "Làm cho công nghệ hiện tại bị lỗi thời ngay lập tức.", isCorrect: false },
+                    { text: "Mở ra hướng đi mới, tạo nền tảng cho các công nghệ khác ra đời và phát triển.", isCorrect: true },
+                    { text: "Làm cho đời sống trở nên phức tạp hơn.", isCorrect: false },
+                    { text: "Không có vai trò gì đáng kể, chỉ là sự thay thế.", isCorrect: false }
+                ],
+                answered: false,
+                isCorrect: null,
+                explanation: "Mỗi sáng chế là một bước đệm, tạo điều kiện cho các phát minh và công nghệ kế tiếp phát triển."
+            },
+            {
+                id: 9,
+                type: 'multiple-choice',
+                question: "Sáng chế **Bút bi** đã thay thế công cụ viết truyền thống nào, giúp cho việc ghi chép trở nên nhanh chóng, tiện lợi và sạch sẽ hơn?",
+                options: [
+                    { text: "Bút chì", isCorrect: false },
+                    { text: "Bàn phím máy tính", isCorrect: false },
+                    { text: "Bút máy và bút lông ngỗng", isCorrect: true },
+                    { text: "Máy in", isCorrect: false }
+                ],
+                answered: false,
+                isCorrect: null,
+                explanation: "Bút bi (Ballpoint pen) do László Bíró sáng chế, đã thay thế bút máy và các loại bút mực cổ điển, tiện dụng hơn rất nhiều."
+            },
+            {
+                id: 10,
+                type: 'drag-drop',
+                question: "Hãy kéo thả các phẩm chất sau vào nhóm **Đức tính CẦN CÓ** hoặc **Đức tính KHÔNG PHÙ HỢP** với một nhà sáng chế.",
+                items: [
+                    { text: "Sáng tạo và Linh hoạt", category: "Đức tính CẦN CÓ" },
+                    { text: "Thích sao chép ý tưởng của người khác", category: "Đức tính KHÔNG PHÙ HỢP" },
+                    { text: "Tò mò và Ham học hỏi", category: "Đức tính CẦN CÓ" },
+                    { text: "Hay chán nản, dễ bỏ cuộc", category: "Đức tính KHÔNG PHÙ HỢP" }
+                ],
+                categories: ["Đức tính CẦN CÓ", "Đức tính KHÔNG PHÙ HỢP"],
+                answered: false,
+                isCorrect: null
+            }
+        ];
+
+        let questions = []; 
+        let currentChallengeIndex = 0;
+        let correctChallenges = 0;
+        let startTime;
+        let playerInfo = {};
+        let currentDraggedItem = null; 
+
+        // Dùng local storage riêng cho Bài 2 Công nghệ 5
+        let playerRecords = JSON.parse(localStorage.getItem('gameRecords_CN5_B2')) || {};
+
+        // === Hàm tiện ích ===
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        function playSound(type) {
+            // DÙNG ÂM THANH CORRECT CHO CẢ HAI TRƯỜNG HỢP ĐỂ KHUYẾN KHÍCH
+            const audio = document.getElementById('sfx-correct'); 
+            if (audio) {
+                audio.currentTime = 0;
+                audio.play();
+            }
+        }
+        
+        function formatTime(ms) {
+            const totalSeconds = Math.floor(ms / 1000);
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
+            return `${minutes} phút ${seconds} giây`;
+        }
+        
+        function savePlayerRecord() {
+            const playerId = playerInfo.name + playerInfo.class;
+            if (!playerRecords[playerId]) {
+                playerRecords[playerId] = {
+                    name: playerInfo.name,
+                    class: playerInfo.class,
+                    playCount: 0
+                };
+            }
+            playerRecords[playerId].playCount += 1;
+            playerInfo.playCount = playerRecords[playerId].playCount;
+            localStorage.setItem('gameRecords_CN5_B2', JSON.stringify(playerRecords));
+        }
+
+        // === Phần 1 & Bắt đầu trò chơi ===
+
+        function loadExistingPlayer(name, playerClass) {
+             const playerId = name + playerClass;
+             if (playerRecords[playerId]) {
+                 playerInfo.playCount = playerRecords[playerId].playCount;
+                 return true;
+             }
+             return false;
+        }
+        
+        function startGame(isReplay = false) {
+            if (!isReplay) {
+                const name = document.getElementById('player-name').value.trim();
+                const playerClass = document.getElementById('player-class').value.trim();
+
+                if (!name || !playerClass) {
+                    alert('Vui lòng nhập đầy đủ Họ và tên, Lớp.');
+                    return;
+                }
+                
+                playerInfo = { name, class: playerClass };
+                loadExistingPlayer(name, playerClass);
+            }
+            
+            savePlayerRecord(); 
+            
+            document.getElementById('info-section').classList.add('hidden');
+            document.getElementById('result-section').classList.add('hidden');
+            document.getElementById('game-section').classList.remove('hidden');
+
+            document.getElementById('display-name').textContent = playerInfo.name;
+            
+            // --- RESET TOÀN BỘ TRẠNG THÁI TRÒ CHƠI ---
+            questions = gameData.map(q => ({ 
+                ...q, 
+                answered: false, 
+                isCorrect: null,
+                domElements: null
+            })); 
+            questions = shuffleArray(questions);
+            
+            currentChallengeIndex = 0;
+            correctChallenges = 0;
+            startTime = Date.now();
+            
+            questions.forEach(q => {
+                 if (q.type === 'drag-drop') {
+                     q.shuffledItems = shuffleArray([...q.items]);
+                 }
+            });
+
+            loadChallenge();
+        }
+        
+        function restartGame() {
+            // Lấy lại thông tin cũ và tăng số lần chơi, bỏ qua Phần 1
+            startGame(true);
+        }
+
+        // === Phần 2: Nội dung trò chơi ===
+
+        function loadChallenge() {
+            if (currentChallengeIndex >= questions.length) {
+                finishGame();
+                return;
+            }
+
+            const challenge = questions[currentChallengeIndex];
+            
+            document.getElementById('next-button').classList.add('hidden');
+            document.getElementById('current-challenge-number').textContent = currentChallengeIndex + 1;
+            document.getElementById('correct-count-display').textContent = correctChallenges;
+            document.getElementById('challenge-text').textContent = challenge.question;
+            
+            const questionArea = document.getElementById('question-area');
+            questionArea.innerHTML = '';
+            
+            // Load giao diện theo loại câu hỏi
+            switch (challenge.type) {
+                case 'multiple-choice':
+                case 'true-false':
+                    loadMultipleChoice(challenge, questionArea);
+                    break;
+                case 'drag-drop':
+                    loadDragDrop(challenge, questionArea);
+                    break;
+            }
+        }
+
+        // --- Dạng Trắc nghiệm (Multiple Choice / True False) ---
+        
+        function loadMultipleChoice(challenge, container) {
+            const optionsContainer = document.createElement('div');
+            optionsContainer.className = 'options-container';
+
+            let optionsToRender = [];
+            if (challenge.type === 'multiple-choice') {
+                optionsToRender = challenge.options.map((opt, index) => ({
+                    text: `${String.fromCharCode(65 + index)}. ${opt.text}`,
+                    isCorrect: opt.isCorrect,
+                    originalIndex: index
+                }));
+            } else if (challenge.type === 'true-false') {
+                optionsToRender = [
+                    { text: 'A. Đúng', isCorrect: challenge.answer === true, originalIndex: 0 },
+                    { text: 'B. Sai', isCorrect: challenge.answer === false, originalIndex: 1 }
+                ];
+            }
+            
+            const shuffledOptions = shuffleArray(optionsToRender);
+            
+            shuffledOptions.forEach((option) => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.textContent = option.text;
+                btn.onclick = () => selectOption(btn, option.isCorrect, optionsToRender); 
+                optionsContainer.appendChild(btn);
+            });
+            container.appendChild(optionsContainer);
+        }
+
+        function selectOption(selectedBtn, isCorrect, optionsToRender) {
+            if (questions[currentChallengeIndex].answered) return;
+
+            const options = selectedBtn.parentNode.querySelectorAll('.option-btn');
+            const challenge = questions[currentChallengeIndex];
+
+            options.forEach(btn => {
+                btn.disabled = true; // Vô hiệu hóa tất cả các nút
+                
+                if (btn === selectedBtn) {
+                     // 1. CHỈ TÔ MÀU XANH LÁ (Màu Correct) DÙ ĐÚNG HAY SAI
+                     btn.classList.add('correct'); 
+                     btn.classList.remove('selected', 'incorrect');
+                } else {
+                     // 2. Các nút còn lại chỉ bị làm mờ đi (KHÔNG hiển thị đáp án đúng)
+                     btn.style.opacity = '0.6';
+                     btn.classList.remove('selected');
+                }
+            }); 
+            
+            challenge.answered = true;
+            challenge.isCorrect = isCorrect; // Vẫn lưu kết quả thực tế để tính điểm cuối cùng
+
+            // 3. CHỈ PHÁT ÂM THANH "ĐÚNG" DÙ KẾT QUẢ LÀ GÌ
+            playSound('correct');
+            
+            // 4. CẬP NHẬT ĐIỂM THỰC TẾ (ẨN VỚI NGƯỜI CHƠI)
+            if (isCorrect) {
+                 correctChallenges++;
+            }
+
+            document.getElementById('next-button').classList.remove('hidden');
+        }
+        
+        // === HÀM XỬ LÝ SỰ KIỆN CẢM ỨNG (TOUCH EVENTS) CHO DRAG-DROP ===
+        
+        function handleTouchMove(e) {
+            if (!currentDraggedItem || questions[currentChallengeIndex].answered) return;
+            e.preventDefault();
+
+            const touch = e.touches[0];
+            
+            // Di chuyển item theo ngón tay
+            currentDraggedItem.style.left = (touch.clientX - currentDraggedItem.offsetX) + 'px';
+            currentDraggedItem.style.top = (touch.clientY - currentDraggedItem.offsetY) + 'px';
+
+            // Highlight drop target khi chạm vào
+            document.querySelectorAll('.drop-target').forEach(target => {
+                const rect = target.getBoundingClientRect();
+                if (touch.clientX >= rect.left && touch.clientX <= rect.right &&
+                    touch.clientY >= rect.top && touch.clientY <= rect.bottom) {
+                    target.classList.add('drag-over');
+                } else {
+                    target.classList.remove('drag-over');
+                }
+            });
+        }
+        
+        // --- Dạng Kéo thả (Drag and Drop) ---
+        
+        function loadDragDrop(challenge, container) {
+            
+            // Hàm xử lý Touch Start (Được định nghĩa lại trong loadDragDrop để gán challenge)
+            const touchStartHandler = function(e) {
+                if (challenge.answered) return;
+                e.preventDefault(); 
+                
+                const item = this; // 'this' là dragItem
+                currentDraggedItem = item;
+                item.classList.add('dragging');
+
+                // Đặt item ở vị trí tuyệt đối để di chuyển
+                item.style.position = 'absolute';
+                item.style.zIndex = '1000';
+                
+                // Ghi lại offset để giữ nguyên vị trí tương đối với điểm chạm
+                const touch = e.touches[0];
+                const rect = item.getBoundingClientRect();
+                item.offsetX = touch.clientX - rect.left;
+                item.offsetY = touch.clientY - rect.top;
+                
+                // Di chuyển item đến vị trí chạm
+                item.style.left = (touch.clientX - item.offsetX) + 'px';
+                item.style.top = (touch.clientY - item.offsetY) + 'px';
+            };
+            
+            // Hàm xử lý Touch End (Được định nghĩa lại trong loadDragDrop để gán challenge)
+            const touchEndHandler = function(e) {
+                if (challenge.answered) return;
+                e.preventDefault();
+                
+                const item = this; // 'this' là dragItem
+                const touch = e.changedTouches[0];
+                let dropped = false;
+
+                document.querySelectorAll('.drop-target').forEach(target => {
+                    target.classList.remove('drag-over');
+                    const rect = target.getBoundingClientRect();
+                    
+                    // Kiểm tra xem ngón tay có kết thúc trong khu vực thả không
+                    if (touch.clientX >= rect.left && touch.clientX <= rect.right &&
+                        touch.clientY >= rect.top && touch.clientY <= rect.bottom) {
+                        
+                        // Xử lý việc thả
+                        target.appendChild(item);
+                        item.style.position = 'static'; 
+                        item.style.zIndex = 'auto';
+                        item.style.left = 'auto';
+                        item.style.top = 'auto';
+                        dropped = true;
+                    }
+                });
+                
+                if (!dropped) {
+                    // Nếu không thả vào khu vực nào, đưa item trở lại khu vực nguồn (drag-source)
+                    const dragSource = document.querySelector('.drag-source');
+                    dragSource.appendChild(item);
+                    item.style.position = 'static'; 
+                    item.style.zIndex = 'auto';
+                    item.style.left = 'auto';
+                    item.style.top = 'auto';
+                }
+
+                item.classList.remove('dragging');
+                currentDraggedItem = null;
+                
+                // Kiểm tra và kết thúc câu hỏi kéo thả
+                checkDragDropComplete(challenge);
+            };
+            
+            // --- Bắt đầu Load Giao diện ---
+            
+            const dragDropArea = document.createElement('div');
+            dragDropArea.className = 'drag-drop-area';
+            
+            const dragSource = document.createElement('div');
+            dragSource.className = 'drag-source';
+
+            challenge.domElements = {};
+            challenge.categories.forEach(category => {
+                const dropTarget = document.createElement('div');
+                dropTarget.className = 'drop-target';
+                dropTarget.dataset.category = category;
+                dropTarget.innerHTML = `<h3>${category}</h3>`;
+                
+                // Sự kiện cho chuột (Desktop)
+                dropTarget.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    if (!challenge.answered) dropTarget.classList.add('drag-over');
+                });
+                dropTarget.addEventListener('dragleave', () => {
+                    dropTarget.classList.remove('drag-over');
+                });
+                dropTarget.addEventListener('drop', (e) => dropItem(e, challenge, dropTarget));
+                
+                challenge.domElements[category] = dropTarget;
+                dragDropArea.appendChild(dropTarget);
+            });
+            
+            challenge.shuffledItems.forEach(item => {
+                const dragItem = document.createElement('div');
+                dragItem.className = 'drag-item';
+                dragItem.textContent = item.text;
+                dragItem.draggable = true; 
+                dragItem.dataset.category = item.category;
+                
+                // Sự kiện TOUCH (Mobile) - Gán handler đã định nghĩa
+                dragItem.addEventListener('touchstart', touchStartHandler);
+                dragItem.addEventListener('touchmove', handleTouchMove);
+                dragItem.addEventListener('touchend', touchEndHandler);
+                
+                // Lưu handler để có thể xóa sau khi trả lời
+                dragItem.touchStartHandler = touchStartHandler;
+                dragItem.touchEndHandler = touchEndHandler;
+
+
+                // Sự kiện cho chuột (Desktop)
+                dragItem.addEventListener('dragstart', (e) => {
+                    e.dataTransfer.setData('text/plain', dragItem.textContent);
+                    e.dataTransfer.effectAllowed = 'move';
+                    dragItem.classList.add('dragging'); 
+                });
+                dragItem.addEventListener('dragend', () => {
+                    dragItem.classList.remove('dragging');
+                });
+                
+                dragSource.appendChild(dragItem);
+            });
+
+            container.appendChild(dragSource);
+            container.appendChild(dragDropArea);
+        }
+        
+        function dropItem(e, challenge, dropTarget) {
+            e.preventDefault();
+            dropTarget.classList.remove('drag-over');
+            if (challenge.answered) return;
+            
+            const data = e.dataTransfer.getData('text/plain');
+            const draggedItem = Array.from(document.querySelectorAll('.drag-item')).find(item => item.textContent === data && item.parentNode.classList.contains('drag-source'));
+            
+            if (draggedItem) {
+                if (challenge.shuffledItems.some(i => i.text === draggedItem.textContent)) {
+                    dropTarget.appendChild(draggedItem);
+                    checkDragDropComplete(challenge);
+                }
+            }
+        }
+
+        function checkDragDropComplete(challenge) {
+            const dragSource = document.querySelector('.drag-source');
+            const remainingItems = Array.from(dragSource.children).filter(el => el.classList.contains('drag-item'));
+
+            if (remainingItems.length === 0) {
+                challenge.answered = true;
+                
+                let allCorrect = true; 
+                
+                // Vô hiệu hóa tương tác
+                document.querySelectorAll('.drag-item').forEach(item => {
+                    item.draggable = false;
+                    // Loại bỏ Touch Handlers
+                    if (item.touchStartHandler) {
+                        item.removeEventListener('touchstart', item.touchStartHandler);
+                        item.removeEventListener('touchmove', handleTouchMove);
+                        item.removeEventListener('touchend', item.touchEndHandler);
+                    }
+                });
+
+                // TÔ MÀU: ÁP DỤNG MÀU XANH LÁ CHO TẤT CẢ CÁC MỤC ĐÃ KÉO THẢ
+                challenge.categories.forEach(category => {
+                    const dropTarget = challenge.domElements[category];
+                    Array.from(dropTarget.children).filter(el => el.classList.contains('drag-item')).forEach(item => {
+                        // Kiểm tra kết quả thực tế (Ẩn)
+                        if (item.dataset.category !== category) {
+                            allCorrect = false; 
+                        }
+                        
+                        // HIỂN THỊ: Luôn luôn tô màu Xanh Lá cho mục đã kéo thả
+                        item.classList.add('correct-answer');
+                        item.classList.remove('incorrect-answer');
+                    });
+                });
+                
+                questions[currentChallengeIndex].isCorrect = allCorrect;
+                
+                if (allCorrect) {
+                     correctChallenges++;
+                     playSound('correct'); 
+                } else {
+                     playSound('correct'); // Dùng âm thanh "đúng" ngay cả khi sai để khuyến khích
+                }
+                
+                // Vô hiệu hóa Drop Targets (Loại bỏ listener chuột)
+                document.querySelectorAll('.drop-target').forEach(target => {
+                    target.removeEventListener('dragover', (e) => {});
+                    target.removeEventListener('dragleave', () => {});
+                    target.removeEventListener('drop', (e) => {});
+                });
+                
+                document.getElementById('next-button').classList.remove('hidden');
+            }
+        }
+
+
+        // --- Chuyển sang thử thách tiếp theo ---
+
+        function nextChallenge() {
+            currentChallengeIndex++;
+            loadChallenge();
+        }
+
+        // === Phần 3: Kết quả và Lưu trữ ===
+
+        function finishGame() {
+            const endTime = Date.now();
+            const totalTime = endTime - startTime;
+            
+            document.getElementById('game-section').classList.add('hidden');
+            document.getElementById('result-section').classList.remove('hidden');
+
+            const totalChallenges = questions.length;
+            const percentageValue = (correctChallenges / totalChallenges) * 100;
+            const percentage = percentageValue.toFixed(0) + '%';
+            
+            let reviewText;
+            let reviewClass;
+
+            if (percentageValue === 100) {
+                reviewText = "Tuyệt vời! Em chính là một nhà sáng chế tí hon đầy tài năng và kiên trì! 💯";
+                reviewClass = 'review-excellent';
+            } else if (percentageValue >= 70) {
+                reviewText = "Em làm rất tốt! Em đã nắm vững vai trò, phẩm chất và lịch sử sáng chế. 👍";
+                reviewClass = 'review-good';
+            } else {
+                reviewText = "Em cần ôn tập kĩ hơn về vai trò, phẩm chất và các sáng chế tiêu biểu. 💪";
+                reviewClass = 'review-need-review';
+            }
+
+            // Hiển thị kết quả
+            document.getElementById('res-name').textContent = playerInfo.name;
+            document.getElementById('res-class').textContent = playerInfo.class;
+            document.getElementById('res-play-count').textContent = playerInfo.playCount;
+            document.getElementById('res-total-challenges').textContent = totalChallenges;
+            document.getElementById('res-correct-challenges').textContent = correctChallenges;
+            document.getElementById('res-percentage').textContent = percentage;
+            document.getElementById('res-time').textContent = formatTime(totalTime);
+            document.getElementById('review-text').textContent = reviewText;
+            document.getElementById('review-text').className = 'review-text ' + reviewClass;
+            
+            document.getElementById('correct-count-display').textContent = correctChallenges; // Cập nhật lại điểm cuối cùng
+            playSound('complete');
+        }
+
+        function shareResult() {
+            const resultSection = document.getElementById('result-section');
+            html2canvas(resultSection, {
+                scale: 2, 
+                backgroundColor: null 
+            }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `KetQua_NhaSangCheTiHon_${playerInfo.name}_${Date.now()}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            }).catch(error => {
+                console.error("Lỗi khi chụp ảnh: ", error);
+                alert("Đã xảy ra lỗi khi tạo ảnh kết quả.");
+            });
+        }
+    </script>
+
+</body>
+</html>

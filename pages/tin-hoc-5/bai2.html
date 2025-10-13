@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tin học 5 - Bài 2: Mạng Lưới Tri Thức</title>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script> 
+    <style>
+        /* CSS cho trò chơi */
+        :root {
+            --primary-color: #FF9800; /* Màu Cam - chủ đạo */
+            --secondary-color: #FFC107; /* Màu Vàng - làm nổi bật */
+            --background-color: #FFF3E0; /* Nền Cam nhạt */
+            --card-color: #FFFFFF;
+            --correct-color: #4CAF50; /* Xanh lá */
+            --incorrect-color: #F44336; /* Đỏ */
+            --text-color: #E65100; /* Cam đậm */
+            --font-family: 'Arial', sans-serif;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 10px rgba(255, 152, 0, 0.5); }
+            50% { box-shadow: 0 0 20px rgba(255, 152, 0, 0.8); }
+            100% { box-shadow: 0 0 10px rgba(255, 152, 0, 0.5); }
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--background-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #FFCC80 0%, #FFF3E0 100%);
+        }
+
+        .game-container {
+            background-color: var(--card-color);
+            border-radius: 20px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+            padding: 30px;
+            max-width: 800px;
+            width: 100%;
+            text-align: center;
+            transition: all 0.5s ease-in-out;
+            position: relative;
+            border: 4px solid var(--primary-color);
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        h1 {
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            font-size: 2.5em;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+
+        /* --- Phần 1: Điền thông tin --- */
+        #info-section input {
+            width: calc(100% - 20px);
+            padding: 12px;
+            margin: 10px 0;
+            border: 2px solid var(--primary-color);
+            border-radius: 10px;
+            font-size: 1.1em;
+            box-sizing: border-box;
+        }
+
+        .btn {
+            background-color: var(--primary-color);
+            color: var(--card-color);
+            padding: 15px 30px;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-top: 20px;
+            transition: background-color 0.3s, transform 0.1s;
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+            animation: pulse 2s infinite;
+        }
+
+        .btn:hover {
+            background-color: #E65100;
+            transform: translateY(-3px);
+            animation: none;
+        }
+
+        /* --- Phần 2: Trò chơi --- */
+        #game-section {
+            text-align: left;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        #challenge-counter {
+            font-size: 1.4em;
+            color: var(--text-color);
+            margin-bottom: 15px;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #FFCC80;
+            padding-bottom: 5px;
+        }
+
+        #challenge-text {
+            background-color: #FFECB3;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            font-size: 1.3em;
+            border-left: 5px solid var(--primary-color);
+        }
+
+        .options-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .option-btn {
+            background-color: #f0f0f0;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1.1em;
+            text-align: left;
+            transition: background-color 0.2s, border-color 0.2s;
+        }
+
+        .option-btn:hover:not(.selected):not([disabled]) {
+            background-color: #FFECB3;
+            border-color: var(--secondary-color);
+        }
+
+        .option-btn.selected {
+            /* Màu mặc định là cam/vàng, sẽ bị override bởi JS để thành xanh lá theo V7 */
+            background-color: #FFB74D; 
+            border-color: var(--primary-color);
+            font-weight: bold;
+            color: #E65100;
+        }
+        
+        /* Dạng Kéo thả (Drag and Drop) */
+        .drag-drop-area {
+            display: flex;
+            justify-content: space-around;
+            gap: 20px;
+            min-height: 250px;
+            text-align: center;
+        }
+        
+        .drop-target {
+            flex: 1;
+            background-color: #FFE0B2; /* Cam nhạt */
+            padding: 15px;
+            border-radius: 15px;
+            border: 3px dashed var(--primary-color);
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            font-weight: bold;
+        }
+        
+        .drop-target.drag-over {
+            border-color: var(--correct-color);
+            background-color: #FFECB3;
+        }
+        
+        .drag-item {
+            background-color: #FF9800; /* Cam */
+            color: var(--card-color);
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: grab;
+            margin: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            transition: transform 0.2s;
+        }
+
+        /* ✅ Thêm CSS đồng nhất màu cho kéo thả (Chỉ dùng Xanh Lá) */
+        .drag-item.correct-answer {
+            background-color: var(--correct-color); /* Xanh lá */
+            color: white;
+            border: 2px solid #388E3C;
+        }
+
+        .drag-item.incorrect-answer {
+            /* Vô hiệu hóa màu đỏ nếu tồn tại, force dùng màu xanh lá */
+            background-color: var(--correct-color) !important; 
+            color: white !important;
+            border: 2px solid #388E3C !important;
+        }
+        
+        .drag-source {
+            background-color: #FFF8E1;
+            padding: 15px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            border: 1px solid #FFCC80;
+        }
+        
+        /* Tùy chỉnh cho Drag-Drop kết quả */
+        .drop-target h3 {
+             color: #E65100;
+        }
+
+
+        /* --- Phần 3: Kết quả --- */
+        #result-section {
+            padding: 30px;
+            background: linear-gradient(135deg, #FFD54F 0%, #FF9800 100%);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            position: relative;
+            margin-top: 20px;
+            color: #424242;
+        }
+
+        #result-info p {
+            font-size: 1.2em;
+            margin: 10px 0;
+            text-align: left;
+            color: #424242;
+        }
+
+        #result-info span {
+            font-weight: bold;
+            color: #E65100; 
+            float: right;
+        }
+
+        #review-text {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 10px;
+            color: white;
+            animation: pulse 1s infinite alternate;
+        }
+        
+        .review-excellent { background-color: var(--correct-color); }
+        .review-good { background-color: #FFB300; }
+        .review-need-review { background-color: var(--incorrect-color); }
+
+        #award-image {
+            width: 120px;
+            height: 120px;
+            margin: 20px auto;
+            background-color: var(--primary-color);
+            border: 6px solid var(--secondary-color);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 4em;
+            color: white;
+            box-shadow: 0 0 15px rgba(255, 193, 7, 0.8);
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .character-status span {
+            color: var(--primary-color);
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="game-container" id="game-area">
+        <h1>🌐 MẠNG LƯỚI TRI THỨC 💡</h1>
+
+        <div id="info-section">
+            <p>Chào em, hãy nhập thông tin để bắt đầu thử thách tìm hiểu thông tin trên website!</p>
+            <input type="text" id="player-name" placeholder="Họ và tên của em" required>
+            <input type="text" id="player-class" placeholder="Lớp (Ví dụ: 5A1)" required>
+            <button class="btn" onclick="startGame()">Bắt đầu</button>
+        </div>
+
+        <div id="game-section" class="hidden">
+            <div id="challenge-counter">
+                <span>Thử thách: <span id="current-challenge-number">1</span> / 7</span>
+                <span id="player-status">Chào <span id="display-name"></span>!</span>
+            </div>
+            
+            <div id="challenge-text"></div>
+            
+            <div id="question-area">
+                </div>
+            
+            <div class="character-status">
+                Trạng thái: Đã hoàn thành đúng <span id="correct-count-display">0</span> thử thách
+            </div>
+
+            <button class="btn hidden" id="next-button" onclick="nextChallenge()">Tiếp tục 🚀</button>
+        </div>
+
+        <div id="result-section" class="hidden">
+            <h2>✨ CHÚC MỪNG EM ✨</h2>
+            <div id="result-info">
+                <p>Họ tên: <span id="res-name"></span></p>
+                <p>Lớp: <span id="res-class"></span></p>
+                <p>Số lần chơi: <span id="res-play-count"></span></p>
+                <p>Tổng thử thách: <span id="res-total-challenges"></span></p>
+                <p>Số thử thách đúng: <span id="res-correct-challenges"></span></p>
+                <p>% hoàn thành đúng: <span id="res-percentage"></span></p>
+                <p>Thời gian hoàn thành: <span id="res-time"></span></p>
+            </div>
+            <div id="review-text"></div>
+            <div id="award-image">🔍</div>
+            <button class="btn" onclick="restartGame()">Chơi lại</button>
+            <button class="btn" onclick="shareResult()">Chia sẻ kết quả 📸</button>
+        </div>
+        
+        <audio id="sfx-correct" src="https://www.soundjay.com/buttons/button-2.mp3" preload="auto"></audio>
+        <audio id="sfx-incorrect" src="https://www.soundjay.com/buttons/button-3.mp3" preload="auto"></audio>
+        <audio id="sfx-complete" src="https://www.soundjay.com/misc/fanfare.mp3" preload="auto"></audio>
+    </div>
+
+    <script>
+        // JavaScript cho trò chơi
+        const gameData = [
+            {
+                id: 1,
+                type: 'multiple-choice',
+                question: "Để tìm thông tin về lịch sử thành phố **Hà Nội** một cách nhanh và chính xác nhất, em sẽ dùng từ khóa nào sau đây?",
+                options: [
+                    { text: "Hà Nội đã trải qua những giai đoạn lịch sử nào?", isCorrect: false },
+                    { text: "Tìm kiếm thông tin lịch sử Hà Nội.", isCorrect: false },
+                    { text: "\"Lịch sử Hà Nội\" -phát triển.", isCorrect: true },
+                    { text: "Lịch sử Hà Nội", isCorrect: false }
+                ],
+                answered: false,
+                isCorrect: null,
+                explanation: "Việc sử dụng dấu ngoặc kép \"\" giúp tìm chính xác cụm từ, và sử dụng dấu trừ - loại bỏ các kết quả không liên quan như quá trình phát triển hiện tại."
+            },
+            {
+                id: 2,
+                type: 'multiple-choice',
+                question: "Trong một nhiệm vụ nhóm về tìm hiểu **\"Quy định đánh giá học sinh tiểu học\"**, em nên ưu tiên tìm kiếm thông tin trên website có tên miền nào?",
+                options: [
+                    { text: "Trang tin tức giải trí (ví dụ: .net).", isCorrect: false },
+                    { text: "Trang cá nhân của một giáo viên (ví dụ: blogspot.com).", isCorrect: false },
+                    { text: "Website của Bộ Giáo dục và Đào tạo hoặc Cổng thông tin Chính phủ (ví dụ: .gov.vn).", isCorrect: true },
+                    { text: "Trang bán sách online (.com).", isCorrect: false }
+                ],
+                answered: false,
+                isCorrect: null
+            },
+            {
+                id: 3,
+                type: 'true-false',
+                question: "Sau khi tìm được một thông tin quan trọng trên mạng, em cần phải **chép lại toàn bộ** thông tin đó ra giấy rồi mới chia sẻ với nhóm. Đúng hay Sai?",
+                answer: false,
+                answered: false,
+                isCorrect: null,
+                explanation: "Sai. Em nên tóm tắt lại ý chính hoặc chia sẻ đường **link (siêu liên kết)** của trang web để các bạn trong nhóm có thể tự đọc và kiểm tra nguồn gốc, giúp tiết kiệm thời gian và đảm bảo độ chính xác."
+            },
+            {
+                id: 4,
+                type: 'multiple-choice',
+                question: "Chức năng chính của **Siêu liên kết (Hyperlink)** khi em tìm thấy nó trên một website là gì?",
+                options: [
+                    { text: "Tải toàn bộ trang web về máy tính.", isCorrect: false },
+                    { text: "Gửi phản hồi của em đến người quản trị website.", isCorrect: false },
+                    { text: "Giúp em di chuyển (nhảy) nhanh từ trang này sang trang khác chỉ bằng một cú nhấp chuột.", isCorrect: true },
+                    { text: "Đánh dấu trang web đó là trang không tin cậy.", isCorrect: false }
+                ],
+                answered: false,
+                isCorrect: null
+            },
+            {
+                id: 5,
+                type: 'multiple-choice',
+                question: "Một website chia sẻ thông tin học tập, nghiên cứu và có tên miền kết thúc bằng **.edu** (Education) thường được đánh giá là:",
+                options: [
+                    { text: "Kém tin cậy, chứa nhiều quảng cáo.", isCorrect: false },
+                    { text: "Thông tin mang tính giải trí, không nghiêm túc.", isCorrect: false },
+                    { text: "Website cung cấp thông tin có độ tin cậy cao, được quản lí bởi các tổ chức giáo dục.", isCorrect: true },
+                    { text: "Chỉ dành cho học sinh, sinh viên nước ngoài.", isCorrect: false }
+                ],
+                answered: false,
+                isCorrect: null
+            },
+            {
+                id: 6,
+                type: 'multiple-choice',
+                question: "Khi tìm kiếm công thức làm món **'Bánh chưng nhân đậu xanh'** trên Google, em muốn loại trừ kết quả có nhân thịt lợn. Em sẽ gõ như thế nào?",
+                options: [
+                    { text: "Bánh chưng nhân đậu xanh +thịt lợn", isCorrect: false },
+                    { text: "\"Bánh chưng nhân đậu xanh\" trừ thịt lợn", isCorrect: false },
+                    { text: "\"Bánh chưng nhân đậu xanh\" -thịt lợn", isCorrect: true },
+                    { text: "Bánh chưng đậu xanh *thịt lợn", isCorrect: false }
+                ],
+                answered: false,
+                isCorrect: null
+            },
+            {
+                id: 7,
+                type: 'drag-drop',
+                question: "Hãy kéo thả các hành động sau vào ô **Nên làm** hoặc **Không nên làm** khi làm việc nhóm và tìm kiếm thông tin trên mạng.",
+                items: [
+                    { text: "Kiểm tra nguồn thông tin (tên miền, tác giả) trước khi tin cậy.", category: "Nên làm" },
+                    { text: "Tóm tắt ý chính và gửi đường link cho bạn nhóm.", category: "Nên làm" },
+                    { text: "Tin hoàn toàn vào kết quả tìm kiếm đầu tiên của Google.", category: "Không nên làm" },
+                    { text: "Dùng hình ảnh không có bản quyền trong bài trình bày.", category: "Không nên làm" }
+                ],
+                categories: ["Nên làm", "Không nên làm"],
+                answered: false,
+                isCorrect: null
+            }
+        ];
+
+        let questions = []; 
+        let currentChallengeIndex = 0;
+        let correctChallenges = 0;
+        let startTime;
+        let playerInfo = {};
+        
+        // Dùng local storage riêng cho Bài 2 Tin học 5 để tránh trùng lặp
+        let playerRecords = JSON.parse(localStorage.getItem('gameRecords_TH5_B2')) || {};
+
+        // === Hàm tiện ích ===
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        function playSound(type) {
+            const audio = document.getElementById(`sfx-${type}`);
+            if (audio) {
+                audio.currentTime = 0;
+                audio.play();
+            }
+        }
+        
+        function formatTime(ms) {
+            const totalSeconds = Math.floor(ms / 1000);
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
+            return `${minutes} phút ${seconds} giây`;
+        }
+        
+        function savePlayerRecord() {
+            const playerId = playerInfo.name + playerInfo.class;
+            if (!playerRecords[playerId]) {
+                playerRecords[playerId] = {
+                    name: playerInfo.name,
+                    class: playerInfo.class,
+                    playCount: 0
+                };
+            }
+            playerRecords[playerId].playCount += 1;
+            playerInfo.playCount = playerRecords[playerId].playCount;
+            localStorage.setItem('gameRecords_TH5_B2', JSON.stringify(playerRecords));
+        }
+
+        // === Phần 1 & Bắt đầu trò chơi ===
+
+        function loadExistingPlayer(name, playerClass) {
+             const playerId = name + playerClass;
+             if (playerRecords[playerId]) {
+                 playerInfo.playCount = playerRecords[playerId].playCount;
+                 return true;
+             }
+             return false;
+        }
+        
+        function startGame(isReplay = false) {
+            if (!isReplay) {
+                const name = document.getElementById('player-name').value.trim();
+                const playerClass = document.getElementById('player-class').value.trim();
+
+                if (!name || !playerClass) {
+                    alert('Vui lòng nhập đầy đủ Họ và tên, Lớp.');
+                    return;
+                }
+                
+                playerInfo = { name, class: playerClass };
+                loadExistingPlayer(name, playerClass);
+            }
+            
+            savePlayerRecord(); 
+            
+            document.getElementById('info-section').classList.add('hidden');
+            document.getElementById('result-section').classList.add('hidden');
+            document.getElementById('game-section').classList.remove('hidden');
+
+            document.getElementById('display-name').textContent = playerInfo.name;
+            
+            // --- RESET TOÀN BỘ TRẠNG THÁI TRÒ CHƠI ---
+            questions = shuffleArray(gameData.map(q => ({ 
+                ...q, 
+                answered: false, 
+                isCorrect: null,
+                domElements: null
+            }))); 
+            
+            currentChallengeIndex = 0;
+            correctChallenges = 0;
+            startTime = Date.now();
+            
+            questions.forEach(q => {
+                 if (q.type === 'drag-drop') {
+                     q.shuffledItems = shuffleArray([...q.items]);
+                 }
+            });
+
+            loadChallenge();
+        }
+        
+        function restartGame() {
+            // Lấy lại thông tin cũ và tăng số lần chơi, bỏ qua Phần 1
+            startGame(true);
+        }
+
+        // === Phần 2: Nội dung trò chơi ===
+
+        function loadChallenge() {
+            if (currentChallengeIndex >= questions.length) {
+                finishGame();
+                return;
+            }
+
+            const challenge = questions[currentChallengeIndex];
+            
+            document.getElementById('next-button').classList.add('hidden');
+            document.getElementById('current-challenge-number').textContent = currentChallengeIndex + 1;
+            document.getElementById('correct-count-display').textContent = correctChallenges;
+            document.getElementById('challenge-text').textContent = challenge.question;
+            
+            const questionArea = document.getElementById('question-area');
+            questionArea.innerHTML = '';
+            
+            // Load giao diện theo loại câu hỏi
+            switch (challenge.type) {
+                case 'multiple-choice':
+                case 'true-false':
+                    loadMultipleChoice(challenge, questionArea);
+                    break;
+                case 'drag-drop':
+                    loadDragDrop(challenge, questionArea);
+                    break;
+            }
+        }
+
+        // --- Dạng Trắc nghiệm (Multiple Choice / True False) ---
+        function loadMultipleChoice(challenge, container) {
+            const optionsContainer = document.createElement('div');
+            optionsContainer.className = 'options-container';
+
+            let optionsToRender = [];
+            if (challenge.type === 'multiple-choice') {
+                optionsToRender = challenge.options.map((opt, index) => ({
+                    text: `${String.fromCharCode(65 + index)}. ${opt.text}`,
+                    isCorrect: opt.isCorrect,
+                    originalIndex: index
+                }));
+            } else if (challenge.type === 'true-false') {
+                optionsToRender = [
+                    { text: 'A. Đúng', isCorrect: challenge.answer === true, originalIndex: 0 },
+                    { text: 'B. Sai', isCorrect: challenge.answer === false, originalIndex: 1 }
+                ];
+            }
+            
+            const shuffledOptions = shuffleArray(optionsToRender);
+            
+            shuffledOptions.forEach((option) => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.textContent = option.text;
+                btn.onclick = () => selectOption(btn, option.isCorrect, optionsToRender); 
+                optionsContainer.appendChild(btn);
+            });
+            container.appendChild(optionsContainer);
+        }
+
+        function selectOption(selectedBtn, isCorrect, optionsToRender) {
+            if (questions[currentChallengeIndex].answered) return;
+
+            const options = selectedBtn.parentNode.querySelectorAll('.option-btn');
+            const challenge = questions[currentChallengeIndex];
+
+            options.forEach(btn => {
+                btn.disabled = true; 
+                
+                if (btn === selectedBtn) {
+                     // 1. ÁP DỤNG MÀU XANH LÁ cho nút được chọn (đồng nhất V7)
+                     btn.style.backgroundColor = 'var(--correct-color)'; // Xanh lá
+                     btn.style.borderColor = '#388E3C'; // Xanh đậm
+                     btn.style.color = 'white';
+                     btn.classList.add('selected'); // Dùng class selected để đánh dấu
+                } else {
+                     // 2. Các nút còn lại chỉ bị làm mờ đi
+                     btn.style.opacity = '0.6';
+                     btn.classList.remove('selected');
+                }
+            }); 
+            
+            challenge.answered = true;
+            challenge.isCorrect = isCorrect; 
+
+            // 3. CHỈ PHÁT ÂM THANH "ĐÚNG" (Đồng nhất V7)
+            playSound('correct');
+            
+            // 4. CẬP NHẬT ĐIỂM THỰC TẾ (Ẩn)
+            if (isCorrect) {
+                 correctChallenges++;
+            }
+
+            document.getElementById('next-button').classList.remove('hidden');
+        }
+
+        // --- Dạng Kéo thả (Drag and Drop) ---
+        function loadDragDrop(challenge, container) {
+            const dragDropArea = document.createElement('div');
+            dragDropArea.className = 'drag-drop-area';
+
+            const dragSource = document.createElement('div');
+            dragSource.className = 'drag-source';
+
+            // Đảm bảo challenge.shuffledItems đã được tạo trong startGame
+            if (!challenge.shuffledItems) {
+                challenge.shuffledItems = shuffleArray([...challenge.items]);
+            }
+
+            challenge.shuffledItems.forEach(item => {
+                const dragItem = document.createElement('div');
+                dragItem.className = 'drag-item';
+                dragItem.textContent = item.text;
+                dragItem.dataset.category = item.category;
+                dragSource.appendChild(dragItem);
+            });
+
+            dragDropArea.appendChild(dragSource);
+
+            challenge.domElements = {};
+            challenge.categories.forEach(category => {
+                const dropTarget = document.createElement('div');
+                dropTarget.className = 'drop-target';
+                dropTarget.dataset.category = category;
+                dropTarget.innerHTML = `<h3>${category}</h3>`;
+                dragDropArea.appendChild(dropTarget);
+                challenge.domElements[category] = dropTarget;
+            });
+
+            container.appendChild(dragDropArea);
+
+            // ✅ Kích hoạt SortableJS
+            new Sortable(dragSource, { group: 'shared', animation: 150 });
+            challenge.categories.forEach(category => {
+                new Sortable(challenge.domElements[category], {
+                    group: 'shared',
+                    animation: 150,
+                    onAdd: () => checkDragDropComplete(challenge)
+                });
+            });
+        }
+
+        // ✅ Cập nhật hàm checkDragDropComplete để đồng bộ màu và âm thanh (V7 Logic)
+        function checkDragDropComplete(challenge) {
+            const dragSource = document.querySelector('.drag-source');
+            if (dragSource.children.length === 0) {
+                challenge.answered = true;
+                let allCorrect = true;
+                
+                // 1. Duyệt qua tất cả các mục đã thả để kiểm tra kết quả thực tế và tô màu
+                challenge.categories.forEach(category => {
+                    const dropTarget = challenge.domElements[category];
+                    Array.from(dropTarget.querySelectorAll('.drag-item')).forEach(item => {
+                        // Kiểm tra kết quả thực tế (Ẩn)
+                        if (item.dataset.category !== category) {
+                            allCorrect = false;
+                        }
+                        
+                        // HIỂN THỊ: Luôn luôn tô màu Xanh Lá (Correct) cho mục đã kéo thả
+                        item.classList.add('correct-answer'); 
+                        item.classList.remove('incorrect-answer'); // Đảm bảo không có màu Đỏ
+                        
+                        // Vô hiệu hóa kéo thả
+                        item.style.cursor = 'default';
+                    });
+                });
+                
+                challenge.isCorrect = allCorrect;
+                
+                // 2. Cập nhật điểm và phát âm thanh (Chỉ dùng 'correct' để khuyến khích)
+                if (allCorrect) { 
+                    correctChallenges++; 
+                    playSound('correct'); 
+                } else {
+                    playSound('correct'); // Dùng âm thanh "đúng" ngay cả khi sai (V7 Logic)
+                }
+                
+                // 3. Hiển thị nút tiếp tục
+                document.getElementById('next-button').classList.remove('hidden');
+            }
+        }
+
+
+        // --- Chuyển sang thử thách tiếp theo ---
+
+        function nextChallenge() {
+            currentChallengeIndex++;
+            loadChallenge();
+        }
+
+        // === Phần 3: Kết quả và Lưu trữ ===
+
+        function finishGame() {
+            const endTime = Date.now();
+            const totalTime = endTime - startTime;
+            
+            document.getElementById('game-section').classList.add('hidden');
+            document.getElementById('result-section').classList.remove('hidden');
+
+            const totalChallenges = questions.length;
+            const percentageValue = (correctChallenges / totalChallenges) * 100;
+            const percentage = percentageValue.toFixed(0) + '%';
+            
+            let reviewText;
+            let reviewClass;
+
+            if (percentageValue === 100) {
+                reviewText = "Xuất sắc! Em đã trở thành chuyên gia mạng lưới tri thức! 💯";
+                reviewClass = 'review-excellent';
+            } else if (percentageValue >= 70) {
+                reviewText = "Em làm rất tốt! Em đã nắm vững các quy tắc tìm kiếm thông tin an toàn và hiệu quả. 👍";
+                reviewClass = 'review-good';
+            } else {
+                reviewText = "Em cần ôn tập kĩ hơn về cách sử dụng từ khóa và đánh giá độ tin cậy của thông tin. 💪";
+                reviewClass = 'review-need-review';
+            }
+
+            // Hiển thị kết quả
+            document.getElementById('res-name').textContent = playerInfo.name;
+            document.getElementById('res-class').textContent = playerInfo.class;
+            document.getElementById('res-play-count').textContent = playerInfo.playCount;
+            document.getElementById('res-total-challenges').textContent = totalChallenges;
+            document.getElementById('res-correct-challenges').textContent = correctChallenges;
+            document.getElementById('res-percentage').textContent = percentage;
+            document.getElementById('res-time').textContent = formatTime(totalTime);
+            document.getElementById('review-text').textContent = reviewText;
+            document.getElementById('review-text').className = 'review-text ' + reviewClass;
+            
+            document.getElementById('correct-count-display').textContent = correctChallenges; 
+            playSound('complete');
+        }
+
+        function shareResult() {
+            const resultSection = document.getElementById('result-section');
+            html2canvas(resultSection, {
+                scale: 2, 
+                backgroundColor: null 
+            }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `KetQua_MangLuoiTriThuc_${playerInfo.name}_${Date.now()}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            }).catch(error => {
+                console.error("Lỗi khi chụp ảnh: ", error);
+                alert("Đã xảy ra lỗi khi tạo ảnh kết quả.");
+            });
+        }
+    </script>
+
+</body>
+</html>
