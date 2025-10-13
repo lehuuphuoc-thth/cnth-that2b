@@ -1,0 +1,352 @@
+/* Giao diện chung */
+body {
+  font-family: 'Inter', sans-serif;
+  margin: 0;
+  font-size: clamp(16px, 2vw, 18px);
+  line-height: 1.6;
+  background-color: #f0f4f8;
+  color: #1a202c;
+  transition: all 0.5s ease-in-out;
+}
+#container {
+  display: flex;
+  height: 100vh;
+  overflow: hidden; /* tránh cuộn ngoài ý muốn */
+  position: relative;
+}
+
+/* Sidebar */
+#sidebar {
+  width: 280px;
+  background: #ffffff;
+  padding: 20px;
+  border-right: 1px solid #e2e8f0;
+  transition: transform 0.4s ease, width 0.4s ease, padding 0.4s ease;
+  height: 100vh;          /* Sidebar cao bằng màn hình */
+  overflow-y: auto;       /* Bật cuộn dọc */
+  overflow-x: hidden;     /* Ẩn cuộn ngang */
+  z-index: 1001;
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
+}
+#sidebar.hidden {
+  transform: translateX(-100%);
+  width: 0;
+  padding: 0;
+  box-shadow: none;
+}
+#sidebar h3 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  color: #4a5568;
+  border-bottom: 2px solid #e2e8f0;
+  padding-bottom: 10px;
+}
+
+/* Nút nhạc */
+#musicToggleBtn {
+  float: right;
+  margin-bottom: 10px;
+  background: #3182ce;
+  color: #fff;
+  border: none;
+  padding: 6px 10px;
+  cursor: pointer;
+  border-radius: 6px;
+  font-size: 16px;
+}
+#musicToggleBtn:hover {
+  background: #2c5282;
+}
+
+/* Menu */
+#menu ul {
+  list-style: none;
+  padding-left: 0;
+  margin: 0;
+}
+#menu li {
+  margin: 8px 0;
+  cursor: pointer;
+  border-radius: 6px;
+  padding-left: 15px;
+}
+#menu li.folder {
+  padding-left: 0;
+}
+#menu li.folder > span {
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  padding: 8px 15px;
+  color: #2d3748;
+}
+#menu li.folder > span:hover {
+  color: #3182ce;
+  background-color: #ebf8ff;
+  border-radius: 6px;
+}
+#menu li.folder > span::before {
+  content: "▶";
+  margin-right: 8px;
+  transition: transform 0.3s ease;
+  font-size: 0.8em;
+  color: #a0aec0;
+}
+#menu li.folder.open > span::before {
+  transform: rotate(90deg);
+  color: #3182ce;
+}
+#menu li.folder > ul {
+  display: none; /* bỏ hiệu ứng mượt, chỉ ẩn/hiện */
+  padding-left: 10px;
+  border-left: 2px solid #e2e8f0;
+  margin-left: 10px;
+}
+#menu li.folder.open > ul {
+  display: block;
+}
+#menu a {
+  display: block;
+  text-decoration: none;
+  color: #4a5568;
+  font-size: clamp(16px, 2.5vw, 17px);
+  padding: 8px 15px;
+  border-radius: 6px;
+}
+#menu a:hover {
+  color: #3182ce;
+  background-color: #f7fafc;
+  transform: translateX(3px);
+}
+
+/* Content + iframe */
+#content {
+  flex-grow: 1;
+  height: 100vh;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 1s ease, transform 1s ease;
+}
+#content.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  object-fit: contain;
+}
+@media (orientation: landscape) {
+  iframe {
+    aspect-ratio: 16 / 9;
+    height: auto;
+  }
+}
+
+/* Nút menu */
+#toggleBtn {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  background: #3182ce;
+  color: #fff;
+  border: none;
+  padding: 10px 18px;
+  cursor: pointer;
+  border-radius: 10px;
+  z-index: 1100;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+/* Overlay */
+#overlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.6);
+  display: none;
+  z-index: 1000;
+}
+
+/* Mobile layout */
+@media (max-width: 768px) {
+  #container {
+    flex-direction: column;
+    height: 100vh;
+  }
+  #sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: 80%;
+    max-width: 300px;
+    transform: translateX(-100%);
+    transition: transform 0.4s ease;
+    z-index: 1001;
+  }
+  #sidebar.show {
+    transform: translateX(0);
+    box-shadow: 5px 0 20px rgba(0,0,0,0.5);
+  }
+  #content {
+    height: 100vh;
+  }
+}
+
+/* Dark mode */
+body.dark-mode {
+  background: #1a202c;
+  color: #e2e8f0;
+}
+body.dark-mode #sidebar {
+  background: #2d3748;
+  border-right: 1px solid #4a5568;
+}
+body.dark-mode #menu a {
+  color: #cbd5e0;
+}
+body.dark-mode #menu a:hover {
+  background-color: #4a5568;
+  color: #90cdf4;
+}
+body.dark-mode #menu li.folder > span {
+  color: #cbd5e0;
+}
+body.dark-mode #menu li.folder > span:hover {
+  background-color: #4a5568;
+  color: #90cdf4;
+}
+body.dark-mode #musicToggleBtn {
+  background: #4a5568;
+}
+body.dark-mode #musicToggleBtn:hover {
+  background: #6b7280;
+}
+
+/* Intro animation */
+#introAnim {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  pointer-events: none;
+  overflow: hidden;
+  background: linear-gradient(180deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+  animation: skyDawn 5s ease-in forwards;
+}
+.intro-sun {
+  position: absolute;
+  bottom: -120px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 160px;
+  height: 160px;
+  background: radial-gradient(circle at 30% 30%, #ffd166, #fca311 60%, #e76f51 100%);
+  border-radius: 50%;
+  box-shadow: 0 0 80px 30px rgba(252,163,17,0.3);
+  animation: sunrise 5s ease-out forwards;
+}
+.intro-horizon {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  height: 40%;
+  background: linear-gradient(180deg, rgba(17,24,39,0) 0%, rgba(17,24,39,0.6) 60%, rgba(17,24,39,0.85) 100%);
+}
+.intro-balloon {
+  position: absolute;
+  bottom: -80px;
+  width: 42px;
+  height: 52px;
+  border-radius: 22px 22px 26px 26px;
+  animation: floatUp 5s ease-in forwards, sway 3s ease-in-out infinite;
+}
+.intro-balloon::after {
+  content: "";
+  position: absolute;
+  bottom: -28px;
+  left: 50%;
+  width: 2px;
+  height: 28px;
+  background: rgba(0,0,0,0.3);
+  transform: translateX(-50%);
+}
+.intro-balloon.b1 { background: #ef476f; left: 15%; animation-delay: 0s; }
+.intro-balloon.b2 { background: #06d6a0; left: 32%; animation-delay: 0.4s; }
+.intro-balloon.b3 {
+  background: #118ab2;
+  left: 55%;
+  animation-delay: 0.8s;
+}
+.intro-balloon.b4 {
+  background: #ffd166;
+  left: 75%;
+  animation-delay: 1.2s;
+}
+
+/* Hiệu ứng bầu trời sáng dần */
+@keyframes skyDawn {
+  0% { background: #0f172a; }
+  100% { background: linear-gradient(180deg, #87ceeb 0%, #fef9c3 100%); }
+}
+
+/* Mặt trời mọc */
+@keyframes sunrise {
+  0% { bottom: -120px; opacity: 0; }
+  100% { bottom: 20%; opacity: 1; }
+}
+
+/* Bóng bay bay lên */
+@keyframes floatUp {
+  0% { bottom: -80px; opacity: 0; }
+  100% { bottom: 100%; opacity: 1; }
+}
+
+/* Lắc lư nhẹ */
+@keyframes sway {
+  0%, 100% { transform: translateX(-50%) rotate(-5deg); }
+  50% { transform: translateX(-50%) rotate(5deg); }
+}
+
+/* Đồng hồ ở chân trang */
+#footerClock {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background: #1e293b;   /* màu nền */
+  color: #f1f1f1;        /* màu chữ */
+  text-align: center;
+  padding: 6px 0;
+  font-size: 15px;
+  font-weight: bold;
+  z-index: 9999;
+}
+body.dark-mode #footerClock {
+  background: #0f172a;
+  color: #e2e8f0;
+}
+
+/* Bỏ hiệu ứng mượt, dùng display */
+#menu li.folder > ul {
+  display: none;
+  padding-left: 10px;
+  border-left: 2px solid #e2e8f0;
+  margin-left: 10px;
+}
+#menu li.folder.open > ul {
+  display: block;
+}
+/* Đồng hồ */
+#clock {
+  margin-top: 10px;
+  text-align: center;
+  font-size: 30px;
+  font-weight: bold;
+  color: #333;
+}
+body.dark-mode #clock {
+  color: #f1f1f1;
+}
