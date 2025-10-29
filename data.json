@@ -35,11 +35,13 @@
       ] },
         { "title": "Tin học 5",
       "children": [
-        { "title": "Bài 1: Máy tính có thể giúp em làm những việc gì?", "url": "pages/tin-hoc-5/bai1.html" }
-        , { "title": "Bài 2: Tìm hiểu thông tin trên website", "url": "pages/tin-hoc-5/bai2.html" }
+        { "title": "Bài 1: Máy tính có thể giúp em làm những việc gì?", "url": "pages/tin-hoc-5/bai1.html" },
+        { "title": "Bài 2: Tìm hiểu thông tin trên website", "url": "pages/tin-hoc-5/bai2.html" },
+        { "title": "Bài 3: Thông tin trong giải quyết vấn đề", "url": "pages/Tin-hoc-5/bai3.html" }
       ] }
       ]
     }
   ]
 
 }
+
